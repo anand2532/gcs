@@ -62,11 +62,33 @@ If you work solo, still walk through the PR template and reviewer checklist befo
 
 ## CI
 
-Pull requests to `main` run GitHub Actions (`validate`: lint, typecheck, tests). Fix failures before merging.
+Workflows under `.github/workflows/`:
 
-## Repository settings (maintainers)
+| Workflow | When | What it does |
+|----------|------|----------------|
+| **CI** (`ci.yml`) | PR / push to `main`, or **manual** (`Actions` → CI → Run workflow) | **`validate`** — lint, typecheck, tests; **`android_build`** — debug APK artifact; **`ios_build`** — simulator `.app` zipped artifact |
+| **PR Review (ESLint)** (`pr-review.yml`) | PR to `main` | Reviewdog posts ESLint findings on changed lines (inline comments) |
 
-Optional hardening on GitHub:
+Fix failing checks before merging. Download build artifacts from the workflow run page (**Artifacts**): Android APK (`gcs-android-debug`), iOS (`gcs-ios-simulator` zip).
 
-- **Branch protection** on `main`: require pull request, optionally require the `validate` status check.
-- **CODEOWNERS**: add later if multiple owners per area.
+### Repository settings (maintainers)
+
+Enable automation safely:
+
+1. **Actions → General → Workflow permissions**  
+   Set **Read and write** if ESLint review comments get `403` (Reviewdog needs permission to comment on PRs). Prefer tighter defaults first; widen only if jobs fail.
+
+2. **Fork PRs**  
+   If contributors use forks: **Actions → General → Fork pull request workflows** — allow workflows from forks if you want CI on fork PRs (review carefully; avoid exposing secrets on fork PRs).
+
+3. **Branch protection** (`main`)  
+   Require status checks before merge, for example:
+
+   - `validate`
+   - `android_build`
+   - `ios_build`
+   - `eslint_review` (from **PR Review (ESLint)**)
+
+   Exact names appear on green runs under the PR **Checks** tab—match those strings in branch protection.
+
+4. **CODEOWNERS**: optional for multi-owner review routing.

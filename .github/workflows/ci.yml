@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint, typecheck, test
+        run: npm run validate
+
+  android_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: >-
+            tools
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+            ndk;27.1.12297006
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcs-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+  ios_build:
+    runs-on: macos-latest
+    env:
+      LANG: en_US.UTF-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods --user-install -N
+          echo "$(ruby -e 'puts Gem.user_dir')/bin" >> "$GITHUB_PATH"
+
+      - name: Pod install
+        working-directory: ios
+        run: pod install
+
+      - name: Build iOS (Simulator)
+        run: |
+          set -eo pipefail
+          xcodebuild \
+            -workspace ios/GCS.xcworkspace \
+            -scheme GCS \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/build-ci \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Zip app bundle
+        run: |
+          cd ios/build-ci/Build/Products/Debug-iphonesimulator
+          zip -ry "$GITHUB_WORKSPACE/gcs-ios-simulator.zip" GCS.app
+
+      - name: Upload iOS simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcs-ios-simulator
+          path: gcs-ios-simulator.zip
+          retention-days: 14

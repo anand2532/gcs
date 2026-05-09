@@ -13,7 +13,7 @@ This runs **ESLint**, **TypeScript** (`tsc --noEmit`), and **Jest** in one band 
 ## GitHub (PRs and issues)
 
 - Use issue templates under `.github/ISSUE_TEMPLATE/` for bugs, features, and **problem / risk** items (workaround + proposed fix).
-- Before opening or updating a PR to `main`, run `npm run validate`; CI runs the same on pull requests.
+- Before opening or updating a PR to `main`, run `npm run validate`; GitHub Actions runs that gate plus Android/iOS build jobs on PRs to `main`. See [contributing.md](contributing.md#ci).
 - Conventions: [contributing.md](contributing.md).
 
 ## Metro and ports
