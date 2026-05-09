@@ -1,3 +1,4 @@
+import {APP_VERSION} from '../src/core/constants/appVersion';
 import {LogLevel} from '../src/core/logger/Logger';
 import {
   buildExportBody,
@@ -8,7 +9,7 @@ import type {TerminalPacketRecord} from '../src/features/telemetry-terminal/stat
 
 const meta = {
   exportedAt: 1_700_000_000_000,
-  appVersion: '0.1.0',
+  appVersion: APP_VERSION,
   transportLabel: 'SIMULATION',
   connectionLabel: 'SIM',
   rowCount: 1,

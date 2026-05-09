@@ -1,2 +1,4 @@
-/** Keep aligned with root package.json version (Metro resolves package.json). */
-export const APP_VERSION = '0.1.0' as const;
+import packageJson from '../../../package.json';
+
+/** Semantic version from root package.json (single source of truth). */
+export const APP_VERSION: string = packageJson.version;

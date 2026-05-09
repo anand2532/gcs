@@ -10,6 +10,37 @@ npm run validate
 
 This runs **ESLint**, **TypeScript** (`tsc --noEmit`), and **Jest** in one band (`lint` → `typecheck` → `test --runInBand`).
 
+## Releases and versioning
+
+The **semantic version** lives only in root `package.json` (`version`). The app reads it via [`src/core/constants/appVersion.ts`](../src/core/constants/appVersion.ts). Android `versionName` / iOS `MARKETING_VERSION` match that string; Android `versionCode` and iOS `CURRENT_PROJECT_VERSION` use the same integer derived from semver: `major * 10000 + minor * 100 + patch` (e.g. `0.1.0` → `100`).
+
+After changing `package.json` version, sync native projects:
+
+```bash
+npm run version:sync
+```
+
+CI runs `npm run version:verify` so Gradle and Xcode settings cannot drift from `package.json`.
+
+**Cutting a release (Git):**
+
+1. Bump and sync without creating a git tag yet (updates `package.json`, `package-lock.json`, Android, iOS):
+
+   ```bash
+   npm run release:patch   # or release:minor / release:major
+   ```
+
+2. Commit the changed files (version + lockfile + native), then tag and push:
+
+   ```bash
+   git add package.json package-lock.json android/app/build.gradle ios/GCS.xcodeproj/project.pbxproj
+   git commit -m "chore(release): v$(node -p \"require('./package.json').version\")"
+   git tag "v$(node -p \"require('./package.json').version\")"
+   git push origin HEAD --follow-tags
+   ```
+
+Alternatively, use `npm version patch` (creates a commit and tag by default), then run `npm run version:sync` and amend or add a follow-up commit that includes the native files, then `git push --follow-tags`.
+
 ## GitHub (PRs and issues)
 
 - Use issue templates under `.github/ISSUE_TEMPLATE/` for bugs, features, and **problem / risk** items (workaround + proposed fix).

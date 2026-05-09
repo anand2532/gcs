@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify native version matches package.json
+        run: npm run version:verify
+
       - name: Lint, typecheck, test
         run: npm run validate
 

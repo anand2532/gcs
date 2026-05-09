@@ -18,6 +18,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "validate": "npm run lint && npm run typecheck && npm run test -- --runInBand",
+    "version:sync": "node scripts/sync-native-version.mjs",
+    "version:verify": "node scripts/verify-native-version.mjs",
+    "release:patch": "npm version patch --no-git-tag-version && npm run version:sync",
+    "release:minor": "npm version minor --no-git-tag-version && npm run version:sync",
+    "release:major": "npm version major --no-git-tag-version && npm run version:sync",
     "pr:create": "bash scripts/create-pr.sh",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky install || true"
