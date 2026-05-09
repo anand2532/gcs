@@ -30,7 +30,11 @@ export interface MissionValidationIssue {
     | 'POLICY_BLOCK'
     | 'BATTERY_ESTIMATE_RISK'
     | 'SURVEY_GRID_TOO_COMPLEX'
-    | 'SURVEY_PATH_TOO_LONG';
+    | 'SURVEY_PATH_TOO_LONG'
+    | 'AIRSPACE_RESTRICTED'
+    | 'GEOFENCE_VIOLATION'
+    | 'NO_FLY_INTERSECTION'
+    | 'TERRAIN_CAUTION';
   readonly severity: 'warning' | 'error';
   readonly message: string;
 }

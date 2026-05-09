@@ -7,6 +7,7 @@ import {
   type PlannedMissionDraft,
   type SurveyConfig,
 } from '../../../core/types/missionPlanning';
+import {validateMissionOperational} from '../../../modules/geospatial';
 import {
   addPoint as appendPolygonVertex,
   buildRoutePreview,
@@ -20,7 +21,6 @@ import {
   setMagneticSnap as applyMagneticSnapEditor,
   setSnapToGrid as applyGridSnapEditor,
   undo,
-  validateDraft,
   type PolygonEditorState,
 } from '../../../modules/mission-planning';
 import {MissionPlanningDraftStore} from '../../../modules/persistence/schemas';
@@ -153,7 +153,12 @@ export function useMissionPlanning() {
 
   const preview = useMemo(() => buildRoutePreview(generatedPath), [generatedPath]);
   const validation = useMemo(
-    () => validateDraft(state.editor.points, generatedPath, state.survey),
+    () =>
+      validateMissionOperational(
+        state.editor.points,
+        generatedPath,
+        state.survey,
+      ),
     [state.editor.points, generatedPath, state.survey],
   );
 
