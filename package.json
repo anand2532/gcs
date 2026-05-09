@@ -18,6 +18,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "validate": "npm run lint && npm run typecheck && npm run test -- --runInBand",
+    "pr:create": "bash scripts/create-pr.sh",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky install || true"
   },
