@@ -16,10 +16,11 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 | [offline-maps.md](offline-maps.md) | Offline tile packs and download UX |
 | [libraries.md](libraries.md) | npm dependencies and how they are used |
 | [development-workflow.md](development-workflow.md) | validate script, Metro ports, adb, device checks |
+| [contributing.md](contributing.md) | GitHub issues, branches, PRs, code review, labels |
 
 ## Who should read what
 
-- **New contributors:** `architecture.md`, `development-workflow.md`, `libraries.md`.
+- **New contributors:** `architecture.md`, `development-workflow.md`, `contributing.md`, `libraries.md`.
 - **Map / UX work:** `map-and-maplibre.md`, `offline-maps.md`.
 - **Telemetry / simulation:** `telemetry-pipeline.md`, `simulation-engine.md`.
 - **Mission planning:** `mission-planning.md`, `persistence.md`.

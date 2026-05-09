@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose an enhancement or new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [README Phase 1 scope](../../README.md#status) for in-scope vs out-of-scope items before filing.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user or operator need does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: High-level approach; link to related docs or code if helpful.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope vs Phase 1
+      description: Why this fits current phase, or note if it is a later-phase item.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional.
