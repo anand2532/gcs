@@ -19,6 +19,17 @@ This runs **ESLint**, **TypeScript** (`tsc --noEmit`), and **Jest** in one band 
 
 Pair Android with 8082 using **`npm run android:8082`** so Gradle launches against the same bundler port.
 
+## Physical USB device only (no emulator)
+
+When multiple devices are attached (emulator + phone), Gradle’s default install may push to both. To target **only** a physical handset:
+
+```bash
+adb devices          # confirm your phone serial (not emulator-*)
+npm run android:phone
+```
+
+The script picks the first non-emulator device, sets `ANDROID_SERIAL`, and passes `--device` to React Native CLI. Close the emulator if you want a single unambiguous target.
+
 ## Physical Android device (adb reverse)
 
 When the device must talk to Metro on your workstation:

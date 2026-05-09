@@ -6,8 +6,10 @@
 App.tsx
   └── AppProviders (GestureHandlerRootView, SafeAreaProvider, ThemeProvider, NavigationContainer)
         └── AppErrorBoundary
-              └── RootNavigator → MapHomeScreen (single stack screen, Phase 1)
+              └── RootNavigator → native stack: MapHome | TelemetryTerminal (modal)
 ```
+
+`enableFreeze(true)` is called from [`App.tsx`](../App.tsx) so inactive screens can use React Freeze when configured. `MapHome` sets `freezeOnBlur: true` as a supplementary optimization when another route is focused.
 
 - **`src/app/`** — Composition only: navigation types, providers, runtime hooks (`installGlobalHandlers`, dev perf counters).
 - **`src/core/`** — Pure domain: TypeScript types, constants, math/geo helpers, structured logger (no React).
@@ -51,7 +53,7 @@ flowchart LR
 
 ## Navigation
 
-`RootNavigator` (`src/app/navigation/RootNavigator.tsx`) uses `@react-navigation/native-stack` with a single route `MapHome`. Adding shells (auth, org picker) later means wrapping or stacking navigators without rewriting map feature code.
+`RootNavigator` (`src/app/navigation/RootNavigator.tsx`) uses `@react-navigation/native-stack` with **`MapHome`** as the initial route and **`TelemetryTerminal`** as a full-screen modal for the developer Telemetry Terminal. Future shells (auth, org picker) can wrap or extend this stack without rewriting map feature code.
 
 ## Error handling
 

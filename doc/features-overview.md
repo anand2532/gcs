@@ -14,6 +14,8 @@ This document maps **operator-visible capabilities** to **source locations**. Ph
 | Camera follow | Optional follow mode + persistence of camera pose | `src/features/map/hooks/useMapCamera.ts`, `src/modules/persistence/schemas.ts` (`MapCameraStore`) |
 | Mission planning | Polygon vertices, survey strip generation, preview in sim | `src/features/mission-planning/`, `src/modules/mission-planning/` |
 | Offline maps | Download visible region as MapLibre offline pack | `src/modules/offline/`, `src/features/map/hooks/useOfflineDownload.ts` |
+| Command Center | Tactical hub overlay from HUD; stub panels; hub navigates to Telemetry Terminal | `src/features/command-center/` |
+| Telemetry Terminal | Full-screen log stream, filters, export (JSON/text/CSV), inspector tabs, link diagnostics | `src/features/telemetry-terminal/` |
 | Resilience | React error boundary, global JS handler, perf counters (dev) | `src/ui/components/AppErrorBoundary.tsx`, `src/app/runtime/installGlobalHandlers.ts`, `perfCounters.ts` |
 
 ## Out of scope (Phase 1)

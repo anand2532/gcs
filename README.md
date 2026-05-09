@@ -22,7 +22,16 @@ pipeline real MAVLink and MQTT links will plug into in later phases.
 | MapLibre map screen + animated drone marker     | Done         |
 | Telemetry watchdog FSM (stale / lost recovery)  | Done         |
 | MMKV persistence (camera, sim config)           | Done         |
+| Command Center (tactical hub, entry to tools) | Done         |
+| Telemetry Terminal (logs, filters, export, inspectors) | Done |
+| Physical-device install (`npm run android:phone`) | Done     |
 | Auth, mission planner, MAVLink, MQTT, geofence  | Out of scope |
+
+### Recent additions (developer / ops tooling)
+
+- **Telemetry Terminal** — full-screen modal from the Command Hub: categorized virtualized log stream, search and filters, JSON / text / CSV export, MAVLink and serial inspector shells, link diagnostics. While it is focused, the simulation auto-pauses (if it was running) and heavy map overlays are skipped when the map route is not focused.
+- **Command Center** — glass hub opened from the HUD glyph; navigates to Telemetry Terminal and hosts stub panels for future org/mission/settings flows.
+- **Mission planner strip** — dock position uses `PLANNER_TOP_DOCK = insets.top + 202` so the minimized tab clears the HUD comfortably.
 
 ## Quick start
 
@@ -68,6 +77,7 @@ cd ios && bundle install && bundle exec pod install && cd -
 | `npm run start:8082` | Metro on port 8082                   |
 | `npm run android:8082` | Build + launch Android on 8082     |
 | `npm run device:prep:8082` | Reset adb reverse + wire 8082 |
+| `npm run android:phone` | Build/install debug APK on **USB device only** (sets `ANDROID_SERIAL`; ignores emulators) |
 | `npm run typecheck` | `tsc --noEmit` over the whole tree   |
 | `npm run lint`      | ESLint over `.ts/.tsx/.js/.jsx`      |
 | `npm run lint:fix`  | ESLint with `--fix`                  |
@@ -86,7 +96,9 @@ src/
 │   ├── utils/                  # geodesic math, throttle, time
 │   └── logger/                 # ring-buffered structured logger (audit-ready)
 ├── features/
-│   └── map/                    # MapHomeScreen + map components/hooks
+│   ├── map/                    # MapHomeScreen + map components/hooks
+│   ├── command-center/         # Tactical hub overlay + navigation to tools
+│   └── telemetry-terminal/     # Log stream, export, inspectors (developer-focused)
 ├── modules/                    # Service layer (one folder per subsystem)
 │   ├── telemetry/              # bus + zustand store + watchdog FSM
 │   ├── simulation/             # engine + flight model + mission runner
@@ -174,16 +186,7 @@ JVM/AGP versions in the future, also confirm Reanimated v3's compatibility.
 
 ## Tests
 
-Phase 1 ships two contract tests under `__tests__/`:
-
-1. **`telemetryPipeline.test.ts`** — pins the bus + store seam: frame
-   delivery, late-subscriber hydration, source-kind tagging, frame counts,
-   and the no-defensive-clone immutability contract.
-2. **`simulationEngine.test.ts`** — confirms the simulation engine
-   implements `TelemetrySource`, publishes frames when started, and
-   actually moves the vehicle.
-
-Run them with `npm test`.
+Core contract tests include **`telemetryPipeline.test.ts`** (bus + store seam) and **`simulationEngine.test.ts`** (simulation as `TelemetrySource`). Additional suites cover mission planning, offline maps, map persistence, telemetry terminal filters/export/diagnostics, and the Command Center store. Run everything with **`npm run validate`** or **`npm test`**.
 
 ## Android device E2E validation (Metro start to finish)
 
@@ -213,6 +216,8 @@ npm run start:8082
 ```bash
 npm run android:8082
 ```
+
+To install **only on a physical USB device** (skip emulators), use `npm run android:phone` instead after `adb devices` shows your handset.
 
 5) **Manual smoke flow (start to end)**
 - App opens map without red-screen/reload loop.
