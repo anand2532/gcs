@@ -9,7 +9,7 @@ pipeline real MAVLink and MQTT links will plug into in later phases.
 > Phase-1 component is what later phases will keep, not throwaway demo
 > code.
 
-**Documentation:** architecture, feature guides, libraries, and workflow notes are in **[doc/README.md](doc/README.md)**. **Contributing** (issues, PRs, review): **[doc/contributing.md](doc/contributing.md)**.
+**Documentation:** architecture, feature guides, libraries, and workflow notes are in **[doc/README.md](doc/README.md)**. **Setup, prerequisites, and builds:** **[doc/setup-and-build/setup-and-build.md](doc/setup-and-build/setup-and-build.md)**. **Contributing** (issues, PRs, review): **[doc/contributing.md](doc/contributing.md)**.
 
 ## Status
 

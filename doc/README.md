@@ -6,6 +6,7 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 
 | Document | Description |
 |----------|-------------|
+| [setup-and-build/setup-and-build.md](setup-and-build/setup-and-build.md) | Clone, prerequisites, env, iOS/Android setup, run and build |
 | [features-overview.md](features-overview.md) | Feature matrix and mapping to `src/` folders |
 | [telemetry-terminal.md](telemetry-terminal.md) | Telemetry Terminal: logs, export, inspectors, perf hooks |
 | [communication.md](communication.md) | MAVLink stack, transports, commands, mission coordinator |
@@ -22,7 +23,7 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 
 ## Who should read what
 
-- **New contributors:** `architecture.md`, `development-workflow.md`, `contributing.md`, `libraries.md`.
+- **New contributors:** `setup-and-build/setup-and-build.md`, `architecture.md`, `development-workflow.md`, `contributing.md`, `libraries.md`.
 - **Map / UX work:** `map-and-maplibre.md`, `offline-maps.md`.
 - **Telemetry / simulation / live link:** `telemetry-pipeline.md`, `communication.md`, `simulation-engine.md`, `telemetry-terminal.md`.
 - **Mission planning:** `mission-planning.md`, `persistence.md`.
