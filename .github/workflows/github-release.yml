@@ -1,0 +1,44 @@
+name: Publish GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: GCS ${{ github.ref_name }}
+          body: |
+            ## GCS — UAV Ground Control (mobile)
+
+            Production-grade, mobile-first **ground control** for UAV operations. Phase 1 ships a dark tactical map home screen, a **simulation engine** on the same telemetry pipeline used for live links, **MapLibre** mapping, a **Command Center** hub, a **Telemetry Terminal** (logs, filters, export, inspectors), and a **MAVLink** communication layer (UDP/TCP and Android USB-focused workflows).
+
+            ### This tag
+
+            - **Semantic version** matches `package.json`; Android `versionName` and iOS `MARKETING_VERSION` follow the same string; native build integers are derived from semver (`major×10000 + minor×100 + patch`).
+            - **Docs:** [Setup and build](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/doc/setup-and-build/setup-and-build.md) · [Documentation index](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/doc/README.md) · [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md)
+
+            ### Commands (quick reference)
+
+            ```bash
+            npm ci
+            npm run validate
+            npm run start
+            npm run android   # or npm run ios on macOS
+            ```
+
+            ---
+
+            _Release published automatically from tag `${{ github.ref_name }}`._
