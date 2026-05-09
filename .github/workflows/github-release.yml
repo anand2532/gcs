@@ -15,15 +15,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create GitHub Release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: >-
+            tools
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+            ndk;27.1.12297006
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Stage APK for release asset
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+            "GCS-${{ github.ref_name }}-android-debug.apk"
+          ls -la "GCS-${{ github.ref_name }}-android-debug.apk"
+
+      - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: GCS ${{ github.ref_name }}
+          files: GCS-${{ github.ref_name }}-android-debug.apk
           body: |
             ## GCS — UAV Ground Control (mobile)
 
             Production-grade, mobile-first **ground control** for UAV operations. Phase 1 ships a dark tactical map home screen, a **simulation engine** on the same telemetry pipeline used for live links, **MapLibre** mapping, a **Command Center** hub, a **Telemetry Terminal** (logs, filters, export, inspectors), and a **MAVLink** communication layer (UDP/TCP and Android USB-focused workflows).
+
+            ### Download
+
+            | Asset | Description |
+            |-------|-------------|
+            | **[GCS-${{ github.ref_name }}-android-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GCS-${{ github.ref_name }}-android-debug.apk)** | Android **debug** APK built by CI from this tag (install via `adb install` or sideload). |
+
+            > For a signed **release** / Play-ready build, use your keystore and `./gradlew assembleRelease` locally or extend this workflow with signing secrets.
 
             ### This tag
 
