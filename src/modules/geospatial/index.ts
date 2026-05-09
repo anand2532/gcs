@@ -1,4 +1,7 @@
-export {validateMissionOperational} from './safety-validation';
+export {
+  validateMissionOperational,
+  missionValidationBlocksArm,
+} from './safety-validation';
 export {
   RegionCatalog,
   offlineDownloadQueue,

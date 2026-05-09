@@ -30,6 +30,38 @@ const LEVEL_ORDER: Record<LogLevel, number> = {
 
 export type LogPayload = Record<string, unknown>;
 
+function scrubPayload(input: unknown, depth = 0): unknown {
+  if (depth > 8) {
+    return '[DEPTH]';
+  }
+  if (input === null || input === undefined) {
+    return input;
+  }
+  if (typeof input !== 'object') {
+    return input;
+  }
+  if (Array.isArray(input)) {
+    return input.map(x => scrubPayload(x, depth + 1));
+  }
+  const obj = input as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const kl = k.toLowerCase();
+    if (
+      kl.includes('token') ||
+      kl.includes('password') ||
+      kl.includes('secret') ||
+      kl.includes('authorization') ||
+      kl === 'cookie'
+    ) {
+      out[k] = '[REDACTED]';
+    } else {
+      out[k] = scrubPayload(v, depth + 1) as unknown;
+    }
+  }
+  return out;
+}
+
 export interface LogRecord {
   readonly t: number;
   readonly level: LogLevel;
@@ -133,8 +165,12 @@ class LoggerImpl {
     if (LEVEL_ORDER[level] < LEVEL_ORDER[this.opts.minLevel]) {
       return;
     }
-    const record: LogRecord = payload
-      ? {t: now(), level, category, message, payload}
+    const safePayload =
+      payload !== undefined && payload !== null
+        ? (scrubPayload(payload) as LogPayload)
+        : undefined;
+    const record: LogRecord = safePayload
+      ? {t: now(), level, category, message, payload: safePayload}
       : {t: now(), level, category, message};
     this.buffer.push(record);
     if (this.opts.consoleSink) {
@@ -142,15 +178,15 @@ class LoggerImpl {
       switch (level) {
         case LogLevel.Error:
 
-          console.error(line, payload ?? '');
+          console.error(line, safePayload ?? '');
           break;
         case LogLevel.Warn:
 
-          console.warn(line, payload ?? '');
+          console.warn(line, safePayload ?? '');
           break;
         default:
 
-          console.log(line, payload ?? '');
+          console.log(line, safePayload ?? '');
       }
     }
     if (this.sinks.size > 0) {

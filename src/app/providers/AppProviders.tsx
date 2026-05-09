@@ -15,6 +15,7 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {theme as appTheme} from '../../core/constants/theme';
+import {SessionHydrator} from '../../modules/session';
 import {AppErrorBoundary} from '../../ui/components/AppErrorBoundary';
 import {ThemeProvider} from '../../ui/theme/ThemeProvider';
 
@@ -48,7 +49,9 @@ export function AppProviders({
       <SafeAreaProvider>
         <ThemeProvider>
           <NavigationContainer theme={navTheme}>
-            <AppErrorBoundary>{children}</AppErrorBoundary>
+            <SessionHydrator>
+              <AppErrorBoundary>{children}</AppErrorBoundary>
+            </SessionHydrator>
           </NavigationContainer>
         </ThemeProvider>
       </SafeAreaProvider>
