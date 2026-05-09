@@ -17,12 +17,9 @@ import {useCommandCenterMotion} from './animations/useCommandCenterMotion';
 import {CommandBackdrop} from './components/CommandBackdrop';
 import {DiagnosticsPanel} from './diagnostics/DiagnosticsPanel';
 import {CommandHubPanel} from './menu/CommandHubPanel';
-import {
-  MissionsStubPanel,
-  OrganizationStubPanel,
-  ProfileStubPanel,
-  SettingsStubPanel,
-} from './menu/stubPanels';
+import {MissionsStubPanel, SettingsStubPanel} from './menu/stubPanels';
+import {OrganizationPanel} from './panels/OrganizationPanel';
+import {UserSessionPanel} from './panels/UserSessionPanel';
 import {
   registerCommandCenterSmoothClose,
   useCommandCenterStore,
@@ -224,9 +221,9 @@ function renderPanel(id: CommandPanelId): React.ReactNode {
     case 'hub':
       return <CommandHubPanel />;
     case 'profile':
-      return <ProfileStubPanel />;
+      return <UserSessionPanel />;
     case 'organization':
-      return <OrganizationStubPanel />;
+      return <OrganizationPanel />;
     case 'missions':
       return <MissionsStubPanel />;
     case 'diagnostics':

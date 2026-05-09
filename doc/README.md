@@ -23,6 +23,9 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 | [geospatial/geofence-engine.md](geospatial/geofence-engine.md) | Zones, telemetry violation path |
 | [geospatial/safety-validation.md](geospatial/safety-validation.md) | `validateMissionOperational` orchestration |
 | [geospatial/map-rendering-performance.md](geospatial/map-rendering-performance.md) | Overlay registry batching |
+| [architecture-audit.md](architecture-audit.md) | Production program: inventory, risks, P0/P1 backlog |
+| [simulation-replay-scope.md](simulation-replay-scope.md) | Sim vs product mission replay definitions |
+| [qa-validation-matrix.md](qa-validation-matrix.md) | Manual + automated QA checklist |
 | [libraries.md](libraries.md) | npm dependencies and how they are used |
 | [development-workflow.md](development-workflow.md) | validate script, Metro ports, adb, device checks |
 | [contributing.md](contributing.md) | GitHub issues, branches, PRs, code review, labels |
@@ -33,3 +36,4 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 - **Map / UX work:** `map-and-maplibre.md`, `offline-maps.md`, `geospatial/*.md`.
 - **Telemetry / simulation / live link:** `telemetry-pipeline.md`, `communication.md`, `simulation-engine.md`, `telemetry-terminal.md`.
 - **Mission planning:** `mission-planning.md`, `persistence.md`.
+- **Production hardening:** `architecture-audit.md`, `qa-validation-matrix.md`, `simulation-replay-scope.md`.

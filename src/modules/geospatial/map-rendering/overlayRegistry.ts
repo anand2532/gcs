@@ -3,6 +3,8 @@
  * not receive new object identity every React render.
  */
 
+import {recordOverlayRegistryFlush} from '../../../app/runtime/perfCounters';
+
 type Listener = () => void;
 
 export class MapOverlayRegistry {
@@ -15,6 +17,7 @@ export class MapOverlayRegistry {
     }
     this.timer = setTimeout(() => {
       this.timer = null;
+      recordOverlayRegistryFlush();
       for (const l of this.listeners) {
         l();
       }

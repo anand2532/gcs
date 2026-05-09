@@ -71,6 +71,11 @@ export function DiagnosticsPanel(): React.JSX.Element {
           value={String(counters.cameraFollowCommands)}
           theme={theme}
         />
+        <MetricRow
+          label="Overlay registry flushes (dev)"
+          value={String(counters.overlayRegistryFlushes)}
+          theme={theme}
+        />
       </GlassPanel>
 
       <GlassPanel style={styles.card}>
