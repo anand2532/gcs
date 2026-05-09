@@ -10,6 +10,12 @@ npm run validate
 
 This runs **ESLint**, **TypeScript** (`tsc --noEmit`), and **Jest** in one band (`lint` → `typecheck` → `test --runInBand`).
 
+## GitHub (PRs and issues)
+
+- Use issue templates under `.github/ISSUE_TEMPLATE/` for bugs, features, and **problem / risk** items (workaround + proposed fix).
+- Before opening or updating a PR to `main`, run `npm run validate`; CI runs the same on pull requests.
+- Conventions: [contributing.md](contributing.md).
+
 ## Metro and ports
 
 | Script | Port | Use |
