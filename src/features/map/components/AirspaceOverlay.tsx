@@ -1,8 +1,8 @@
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
 
 import {FillLayer, LineLayer, ShapeSource} from '@maplibre/maplibre-react-native';
 
-import {AirspaceStore} from '../../../modules/geospatial/airspace/AirspaceStore';
+import {AirspaceStore, globalOverlayRegistry} from '../../../modules/geospatial';
 import {useTheme} from '../../../ui/theme/ThemeProvider';
 
 import type {FeatureCollection} from 'geojson';
@@ -14,6 +14,10 @@ export function AirspaceOverlay(): React.JSX.Element | null {
   const theme = useTheme();
 
   const shape = useMemo(() => AirspaceStore.getActiveGeoJson(), []);
+
+  useEffect(() => {
+    globalOverlayRegistry.scheduleFlush(24);
+  }, [shape]);
 
   if (!shape.features.length) {
     return null;

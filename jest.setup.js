@@ -43,6 +43,15 @@ jest.mock('react-native-mmkv', () => {
   return {MMKV};
 });
 
+jest.mock('react-native-keychain', () => {
+  const k = {
+    setGenericPassword: jest.fn(() => Promise.resolve(true)),
+    getGenericPassword: jest.fn(() => Promise.resolve(false)),
+    resetGenericPassword: jest.fn(() => Promise.resolve(true)),
+  };
+  return {__esModule: true, default: k, ...k};
+});
+
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
   default: {

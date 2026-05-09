@@ -4,6 +4,7 @@
  */
 
 export type RootStackParamList = {
+  Bootstrap: undefined;
   MapHome: undefined;
   TelemetryTerminal: undefined;
 };

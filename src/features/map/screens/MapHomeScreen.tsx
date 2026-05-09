@@ -25,6 +25,7 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  Alert,
   AppState,
   StatusBar,
   StyleSheet,
@@ -44,6 +45,8 @@ import {LogLevel, log} from '../../../core/logger/Logger';
 import {type GeoPoint} from '../../../core/types/geo';
 import {
   bindGeofenceTelemetryEvaluation,
+  globalOverlayRegistry,
+  missionValidationBlocksArm,
   useOperationalBasemap,
 } from '../../../modules/geospatial';
 import {OfflineMapManager} from '../../../modules/offline';
@@ -120,6 +123,10 @@ export function MapHomeScreen(): React.JSX.Element {
     persistVariant,
     mapCenter,
   );
+
+  useEffect(() => {
+    globalOverlayRegistry.scheduleFlush(40);
+  }, [basemap.effectiveVariant, basemap.styleURL]);
 
   const handleCameraIdleCombined = useCallback(
     (e: MapCameraIdleEvent) => {
@@ -281,13 +288,27 @@ export function MapHomeScreen(): React.JSX.Element {
   };
 
   const handleArmToggle = (): void => {
-    if (simState.run === SimRunState.Idle && !armed) {
-      // In Phase 1, arming without a started sim is just a UI toggle. Real
-      // safety gating (preflight checklist) lands in a later phase.
+    const nextArmed = !armed;
+    if (
+      nextArmed &&
+      planning.state.enabled &&
+      missionValidationBlocksArm(planning.validation)
+    ) {
+      const msgs = planning.validation.issues
+        .filter(i => i.severity === 'error')
+        .map(i => i.message);
+      Alert.alert(
+        'Cannot arm — mission invalid',
+        msgs.slice(0, 5).join('\n') ||
+          'Resolve validation errors before arming with an active mission plan.',
+      );
+      return;
+    }
+    if (simState.run === SimRunState.Idle && !armed && nextArmed) {
       useTelemetryStore.getState().setArmed(true);
       return;
     }
-    useTelemetryStore.getState().setArmed(!armed);
+    useTelemetryStore.getState().setArmed(nextArmed);
   };
 
   const handleDownload = (): void => {

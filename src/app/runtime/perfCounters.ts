@@ -17,6 +17,7 @@ const COUNTERS_ALWAYS = false;
 
 let trailRedraws = 0;
 let cameraFollowCommands = 0;
+let overlayRegistryFlushes = 0;
 
 export function recordTrailRedraw(): void {
   if (!__DEV__ && !COUNTERS_ALWAYS) {
@@ -32,17 +33,27 @@ export function recordCameraFollowCommand(): void {
   cameraFollowCommands++;
 }
 
+export function recordOverlayRegistryFlush(): void {
+  if (!__DEV__ && !COUNTERS_ALWAYS) {
+    return;
+  }
+  overlayRegistryFlushes++;
+}
+
 export function getPerfCountersSnapshot(): {
   trailRedraws: number;
   cameraFollowCommands: number;
+  overlayRegistryFlushes: number;
 } {
   return {
     trailRedraws,
     cameraFollowCommands,
+    overlayRegistryFlushes,
   };
 }
 
 export function resetPerfCounters(): void {
   trailRedraws = 0;
   cameraFollowCommands = 0;
+  overlayRegistryFlushes = 0;
 }

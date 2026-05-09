@@ -14,6 +14,8 @@ Dependencies come from [package.json](../package.json). This table summarizes **
 | `@react-native-community/blur` | Glass-style blur panels where used in UI. |
 | `react-native-svg` | Vector icons and HUD graphics. |
 | `react-native-mmkv` | Fast synchronous persistence (`src/modules/persistence/`). |
-| `zustand` | Telemetry and lightweight UI stores backed by the telemetry module. |
+| `react-native-keychain` | Secure enclave storage for refresh tokens (`src/modules/session/`). |
+| `@react-native-community/netinfo` | Connectivity hints for basemap / offline UX. |
+| `zustand` | Telemetry, session, org stores, and lightweight UI state. |
 
 **Dev tooling** (Babel, ESLint, Prettier, Jest, TypeScript, RN CLI) supports linting, tests, and builds but is not shipped in the app binary.
