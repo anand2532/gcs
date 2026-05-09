@@ -97,14 +97,34 @@ jobs:
       - name: Build iOS (Simulator)
         run: |
           set -eo pipefail
+          # Generic simulator destination is flaky on GitHub-hosted macOS (xcodebuild exit 65).
+          # Pick any available iPhone simulator by UDID so the destination always resolves.
+          UDID="$(python3 - <<'PY'
+          import json, subprocess, sys
+          raw = subprocess.check_output(
+              ["xcrun", "simctl", "list", "devices", "available", "-j"],
+              text=True,
+          )
+          data = json.loads(raw)
+          for _runtime, devs in data.get("devices", {}).items():
+              for d in devs:
+                  if d.get("isAvailable") and "iPhone" in d.get("name", ""):
+                      print(d["udid"])
+                      sys.exit(0)
+          print("No available iPhone simulator found", file=sys.stderr)
+          sys.exit(1)
+          PY
+          )"
+          echo "Building for simulator UDID=$UDID"
           xcodebuild \
             -workspace ios/GCS.xcworkspace \
             -scheme GCS \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "id=$UDID" \
             -derivedDataPath ios/build-ci \
             CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             build
 
       - name: Zip app bundle
