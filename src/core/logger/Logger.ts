@@ -206,4 +206,5 @@ export const log = {
   map: logger.child('map'),
   store: logger.child('store'),
   watchdog: logger.child('watchdog'),
+  communication: logger.child('communication'),
 };

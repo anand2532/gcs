@@ -42,6 +42,8 @@ interface SimControlsProps {
   readonly onResume: () => void;
   readonly onReset: () => void;
   readonly onLoadNextMission: () => void;
+  /** When true, hide simulation-only mission controls (MAVLink live link). */
+  readonly linkMode?: boolean;
 }
 
 export function SimControls({
@@ -52,6 +54,7 @@ export function SimControls({
   onResume,
   onReset,
   onLoadNextMission,
+  linkMode = false,
 }: SimControlsProps): React.JSX.Element {
   const isRunning = state.run === SimRunState.Running;
   const isPaused = state.run === SimRunState.Paused;
@@ -62,15 +65,17 @@ export function SimControls({
     <View style={styles.stack}>
       {isIdle ? (
         <FAB
-          accessibilityLabel="Start simulation"
+          accessibilityLabel={
+            linkMode ? 'Start MAVLink listener' : 'Start simulation'
+          }
           glyph="▶"
-          label="Start"
+          label={linkMode ? 'Listen' : 'Start'}
           tone="green"
           active
           onPress={onStart}
         />
       ) : null}
-      {isRunning ? (
+      {!linkMode && isRunning ? (
         <FAB
           accessibilityLabel="Pause simulation"
           glyph="❚❚"
@@ -80,7 +85,7 @@ export function SimControls({
           onPress={onPause}
         />
       ) : null}
-      {isPaused ? (
+      {!linkMode && isPaused ? (
         <FAB
           accessibilityLabel="Resume simulation"
           glyph="▶"
@@ -90,22 +95,26 @@ export function SimControls({
           onPress={onResume}
         />
       ) : null}
-      <View style={styles.gap} />
-      <FAB
-        accessibilityLabel="Load next sample mission"
-        glyph="≋"
-        label={currentPresetLabel(state.selectedMissionPresetId, presets)}
-        tone="cyan"
-        onPress={onLoadNextMission}
-      />
-      <View style={styles.gap} />
-      <FAB
-        accessibilityLabel="Reset simulation"
-        glyph="⟲"
-        label="Reset"
-        tone="neutral"
-        onPress={onReset}
-      />
+      {!linkMode ? <View style={styles.gap} /> : null}
+      {!linkMode ? (
+        <FAB
+          accessibilityLabel="Load next sample mission"
+          glyph="≋"
+          label={currentPresetLabel(state.selectedMissionPresetId, presets)}
+          tone="cyan"
+          onPress={onLoadNextMission}
+        />
+      ) : null}
+      {!linkMode ? <View style={styles.gap} /> : null}
+      {!linkMode ? (
+        <FAB
+          accessibilityLabel="Reset simulation"
+          glyph="⟲"
+          label="Reset"
+          tone="neutral"
+          onPress={onReset}
+        />
+      ) : null}
     </View>
   );
 }

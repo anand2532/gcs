@@ -181,3 +181,26 @@ jest.mock('@maplibre/maplibre-react-native', () => {
 jest.mock('@react-native-community/blur', () => ({
   BlurView: () => null,
 }));
+
+jest.mock('react-native-udp', () => {
+  const {EventEmitter} = require('events');
+  class MockUdpSocket extends EventEmitter {
+    bind() {
+      queueMicrotask(() => this.emit('listening'));
+    }
+    close() {}
+    send(_msg, _off, _len, _port, _addr, cb) {
+      if (typeof cb === 'function') {
+        cb();
+      }
+    }
+  }
+  return {
+    __esModule: true,
+    default: class UdpSockets {
+      static createSocket() {
+        return new MockUdpSocket();
+      }
+    },
+  };
+});

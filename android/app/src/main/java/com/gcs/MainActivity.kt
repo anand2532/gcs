@@ -30,9 +30,13 @@ class MainActivity : ReactActivity() {
   }
 
   override fun onWindowFocusChanged(hasFocus: Boolean) {
-    super.onWindowFocusChanged(hasFocus)
-    if (hasFocus) {
-      enableImmersiveMode()
+    // Post one frame so React Native's delegate sees focus after bridge/context
+    // is ready (avoids ReactNoCrashSoftException during reload / immersive churn).
+    window.decorView.post {
+      super@MainActivity.onWindowFocusChanged(hasFocus)
+      if (hasFocus) {
+        enableImmersiveMode()
+      }
     }
   }
 
