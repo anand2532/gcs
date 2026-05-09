@@ -1,0 +1,51 @@
+{
+  "version": 8,
+  "name": "GCS Hybrid",
+  "sources": {
+    "esri-imagery": {
+      "type": "raster",
+      "tiles": [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+      ],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 19,
+      "attribution": "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP",
+      "scheme": "xyz"
+    },
+    "esri-overlay": {
+      "type": "raster",
+      "tiles": [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+      ],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 13,
+      "attribution": "Boundaries &copy; Esri",
+      "scheme": "xyz"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {"background-color": "#000814"}
+    },
+    {
+      "id": "esri-imagery",
+      "type": "raster",
+      "source": "esri-imagery",
+      "minzoom": 0,
+      "maxzoom": 22,
+      "paint": {"raster-opacity": 1, "raster-fade-duration": 180}
+    },
+    {
+      "id": "esri-overlay",
+      "type": "raster",
+      "source": "esri-overlay",
+      "minzoom": 0,
+      "maxzoom": 22,
+      "paint": {"raster-opacity": 0.85, "raster-fade-duration": 220}
+    }
+  ]
+}
