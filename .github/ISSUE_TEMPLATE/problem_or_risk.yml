@@ -1,0 +1,45 @@
+name: Problem or risk
+description: Track a current pain point, technical debt, or future risk—with workaround and proposed fix
+title: "[Risk]: "
+labels: ["tech-debt"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for issues that are not a simple bug: operational friction, performance limits, integration risks, or known limitations. Prefer **Bug report** for clear defects with repro steps.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - Blocking
+        - Inconvenient
+        - Future risk (not yet blocking)
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, screenshots, doc quotes, or code pointers (`src/...`).
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround today
+      description: What developers or operators can do right now. See [development-workflow.md](../../doc/development-workflow.md) for Metro/adb triage patterns.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Technical direction, milestones, or follow-up PR outline.
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Related issues or PRs
+      placeholder: "#123, #456"
