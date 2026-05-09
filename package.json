@@ -10,6 +10,7 @@
     "start": "react-native start",
     "start:8082": "fuser -k 8081/tcp || true && fuser -k 8082/tcp || true && react-native start --port 8082 --reset-cache",
     "android:8082": "adb reverse --remove-all && adb reverse tcp:8082 tcp:8082 && react-native run-android --port 8082",
+    "device:prep": "bash scripts/device-prep-usb-8081.sh",
     "device:prep:8082": "adb reverse --remove-all && adb reverse tcp:8081 tcp:8082 && adb reverse tcp:8082 tcp:8082",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
@@ -17,6 +18,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "validate": "npm run lint && npm run typecheck && npm run test -- --runInBand",
+    "pr:create": "bash scripts/create-pr.sh",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky install || true"
   },
@@ -33,6 +35,8 @@
     "react-native-safe-area-context": "4.14.1",
     "react-native-screens": "4.4.0",
     "react-native-svg": "15.8.0",
+    "react-native-tcp-socket": "^6.4.1",
+    "react-native-udp": "^4.1.7",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

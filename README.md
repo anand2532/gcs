@@ -25,7 +25,8 @@ pipeline real MAVLink and MQTT links will plug into in later phases.
 | Command Center (tactical hub, entry to tools) | Done         |
 | Telemetry Terminal (logs, filters, export, inspectors) | Done |
 | Physical-device install (`npm run android:phone`) | Done     |
-| Auth, mission planner, MAVLink, MQTT, geofence  | Out of scope |
+| MAVLink UDP/TCP communication layer (`src/communication`) | Done |
+| Auth, mission planner UX hardening, MQTT cloud bridge, geofence | Out of scope |
 
 ### Recent additions (developer / ops tooling)
 

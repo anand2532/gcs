@@ -14,4 +14,5 @@ echo "Installing on physical device only: ${serial}"
 echo "(Close the Android emulator if you do not want updates there.)"
 # Gradle installDebug otherwise pushes to every adb device; pin default adb target.
 export ANDROID_SERIAL="${serial}"
-exec npx react-native run-android --no-packager --device "${serial}"
+# Use --deviceId: RN CLI's runOnSpecificDevice reads `deviceId`, not `device` (so --device is a no-op).
+exec npx react-native run-android --no-packager --deviceId "${serial}"

@@ -35,6 +35,6 @@
 - **`FlightTrail`** — bus subscription; ShapeSource updates are **throttled** (`FLIGHT_TRAIL_REDRAW_MAX_HZ` in `src/core/constants/map.ts`).
 - **`useMapCamera`** — follow mode uses bus + **throttled** `setCamera` (`FOLLOW_CAMERA_MAX_HZ`) to limit bridge traffic when sim tick rate is high.
 
-## Future sources
+## Live MAVLink source
 
-MAVLink/MQTT bridges will implement `TelemetrySource`, call `telemetryBus.publish`, and register with `telemetrySourceRegistry` — no changes required to HUD/map contracts beyond connection metadata.
+The MAVLink UDP ingress (`MavlinkTelemetrySource` in `src/communication/`) implements `TelemetrySource`, publishes `TelemetryFrame`s with `source: MAVLINK`, and registers via `telemetrySourceRegistry`. HUD/map contracts stay unchanged. See **[communication.md](communication.md)** for transports, command ACK pipeline, and stubs (USB / Bluetooth / MQTT).

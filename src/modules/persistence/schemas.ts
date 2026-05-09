@@ -21,6 +21,7 @@ export const StorageKeys = {
   SimConfig: 'sim.config.v1',
   MissionPlanningDraft: 'mission.planning.draft.v1',
   MissionPlanningUi: 'mission.planning.ui.v1',
+  LinkProfile: 'telemetry.link.profile.v1',
 } as const;
 
 export const MAP_CAMERA_VERSION = 2;
@@ -29,6 +30,7 @@ export const MAP_VARIANT_VERSION = 1;
 export const SIM_CONFIG_VERSION = 1;
 export const MISSION_PLANNING_DRAFT_VERSION = 1;
 export const MISSION_PLANNING_UI_VERSION = 1;
+export const LINK_PROFILE_VERSION = 1;
 
 export interface PersistedSimConfig {
   readonly tickHz: number;
@@ -142,5 +144,31 @@ export const MissionPlanningUiStore = {
       MISSION_PLANNING_UI_VERSION,
       data,
     );
+  },
+};
+
+export type TelemetryLinkProfileKind = 'simulation' | 'mavlink_udp';
+
+export interface PersistedLinkProfile {
+  readonly profile: TelemetryLinkProfileKind;
+  /** Local UDP port bound for MAVLink ingress (default SITL-style 14550). */
+  readonly udpBindPort: number;
+}
+
+export const LinkProfileStore = {
+  load(): PersistedLinkProfile {
+    const stored = storage.getVersioned<PersistedLinkProfile>(
+      StorageKeys.LinkProfile,
+      LINK_PROFILE_VERSION,
+    );
+    return (
+      stored ?? {
+        profile: 'simulation',
+        udpBindPort: 14550,
+      }
+    );
+  },
+  save(profile: PersistedLinkProfile): void {
+    storage.setVersioned(StorageKeys.LinkProfile, LINK_PROFILE_VERSION, profile);
   },
 };

@@ -87,6 +87,19 @@ export interface SystemState {
   readonly armed: boolean;
 }
 
+/** Optional mission progress when MAVLink NAV_CONTROLLER_OUTPUT / MISSION_CURRENT available. */
+export interface TelemetryMissionSnapshot {
+  readonly seq: number;
+  readonly total: number;
+  readonly distToWpM?: number;
+}
+
+/** RC / uplink quality hints when MAVLink RC_CHANNELS / RADIO_STATUS available. */
+export interface RcLinkStatus {
+  readonly valid: boolean;
+  readonly rssiDbm?: number;
+}
+
 export interface LinkState {
   /** 0..1 quality score after synthetic loss/jitter modeling. */
   readonly quality: number;
@@ -119,6 +132,10 @@ export interface TelemetryFrame {
   readonly gps: GpsState;
   readonly link: LinkState;
   readonly system: SystemState;
+  /** Present when link publishes mission progress (MAVLink etc.). */
+  readonly missionProgress?: TelemetryMissionSnapshot;
+  /** Present when RC radio telemetry is available. */
+  readonly rc?: RcLinkStatus;
 }
 
 /**

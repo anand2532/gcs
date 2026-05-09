@@ -37,13 +37,18 @@ import {Camera, type MapViewRef} from '@maplibre/maplibre-react-native';
 import {useIsFocused} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 
+import {setMavlinkTapListener} from '../../../communication/debug/mavlinkTapBridge';
+import {mavlinkTelemetrySource} from '../../../communication/MavlinkTelemetrySource';
 import {type MapStyleVariant} from '../../../core/constants/map';
-import {log} from '../../../core/logger/Logger';
+import {LogLevel, log} from '../../../core/logger/Logger';
 import {type GeoPoint} from '../../../core/types/geo';
 import {OfflineMapManager} from '../../../modules/offline';
 import {
+  LinkProfileStore,
   MapVariantStore,
   MissionPlanningUiStore,
+  type PersistedLinkProfile,
+  type TelemetryLinkProfileKind,
 } from '../../../modules/persistence/schemas';
 import {
   simulationEngine,
@@ -63,8 +68,10 @@ import {CommandCenterRoot} from '../../command-center/CommandCenterRoot';
 import {MissionPlanningOverlays} from '../../mission-planning/components/MissionPlanningOverlays';
 import {MissionPlanningPanel} from '../../mission-planning/components/MissionPlanningPanel';
 import {useMissionPlanning} from '../../mission-planning/hooks/useMissionPlanning';
+import {useTerminalPacketStore} from '../../telemetry-terminal/state/terminalPacketStore';
 import {DroneMarker} from '../components/DroneMarker';
 import {FlightTrail} from '../components/FlightTrail';
+import {LinkProfileToggle} from '../components/LinkProfileToggle';
 import {
   CameraControls,
   OfflineControls,
@@ -91,6 +98,10 @@ export function MapHomeScreen(): React.JSX.Element {
     MapVariantStore.load(),
   );
 
+  const [linkProfile, setLinkProfile] = useState<PersistedLinkProfile>(() =>
+    LinkProfileStore.load(),
+  );
+
   const [simState, setSimState] = useState<SimulationState>(() =>
     simulationEngine.getState(),
   );
@@ -113,7 +124,12 @@ export function MapHomeScreen(): React.JSX.Element {
   const PLANNER_MIN_HEIGHT = 56;
 
   useEffect(() => {
-    telemetrySourceRegistry.attach(simulationEngine);
+    if (linkProfile.profile === 'mavlink_udp') {
+      mavlinkTelemetrySource.configure({bindPort: linkProfile.udpBindPort});
+      telemetrySourceRegistry.attach(mavlinkTelemetrySource);
+    } else {
+      telemetrySourceRegistry.attach(simulationEngine);
+    }
     telemetryWatchdog.start();
     const unsub = simulationEngine.subscribe(setSimState);
     log.app.info('MapHomeScreen mounted');
@@ -133,6 +149,26 @@ export function MapHomeScreen(): React.JSX.Element {
       // foreground interruptions (common on some OEM Android builds). This
       // keeps mission state stable when the app is briefly backgrounded.
       log.app.info('MapHomeScreen unmounted');
+    };
+  }, [linkProfile]);
+
+  useEffect(() => {
+    setMavlinkTapListener(ev => {
+      useTerminalPacketStore.getState().appendSynthetic({
+        id: `ml-${ev.msgId}-${ev.seq}-${Date.now()}`,
+        t: Date.now(),
+        direction: 'INCOMING',
+        category: 'MAVLINK',
+        severity: ev.checksumOk ? LogLevel.Info : LogLevel.Warn,
+        summary: `MAVLink msg=${ev.msgId} sys=${ev.sysId} comp=${ev.compId}`,
+        packetType: `MAVLINK_${ev.msgId}`,
+        sourceSystem: String(ev.sysId),
+        targetSystem: String(ev.compId),
+        rawHex: ev.payloadPreviewHex,
+      });
+    });
+    return () => {
+      setMavlinkTapListener(undefined);
     };
   }, []);
 
@@ -181,17 +217,33 @@ export function MapHomeScreen(): React.JSX.Element {
     telemetrySourceRegistry.startActive();
   };
   const handlePause = (): void => {
-    simulationEngine.pause();
+    if (linkProfile.profile === 'simulation') {
+      simulationEngine.pause();
+    }
   };
   const handleResume = (): void => {
-    simulationEngine.resume();
+    if (linkProfile.profile === 'simulation') {
+      simulationEngine.resume();
+    }
   };
   const handleReset = (): void => {
-    simulationEngine.reset();
+    if (linkProfile.profile === 'simulation') {
+      simulationEngine.reset();
+    }
   };
   const handleLoadNextMission = (): void => {
-    simulationEngine.loadNextMissionPreset();
+    if (linkProfile.profile === 'simulation') {
+      simulationEngine.loadNextMissionPreset();
+    }
   };
+
+  const handleLinkProfileChange = (next: TelemetryLinkProfileKind): void => {
+    const merged: PersistedLinkProfile = {...linkProfile, profile: next};
+    setLinkProfile(merged);
+    LinkProfileStore.save(merged);
+  };
+
+  const linkMode = linkProfile.profile === 'mavlink_udp';
 
   const handleToggleFollow = (): void => {
     camera.setFollowDrone(!camera.followDrone);
@@ -402,15 +454,22 @@ export function MapHomeScreen(): React.JSX.Element {
             styles.simSlot,
             {bottom: insets.bottom + theme.spacing.lg, left: theme.spacing.lg},
           ]}>
-          <SimControls
-            state={simState}
-            presets={missionPresets}
-            onStart={handleStart}
-            onPause={handlePause}
-            onResume={handleResume}
-            onReset={handleReset}
-            onLoadNextMission={handleLoadNextMission}
-          />
+          <View style={styles.simColumn}>
+            <LinkProfileToggle
+              profile={linkProfile.profile}
+              onChange={handleLinkProfileChange}
+            />
+            <SimControls
+              state={simState}
+              presets={missionPresets}
+              onStart={handleStart}
+              onPause={handlePause}
+              onResume={handleResume}
+              onReset={handleReset}
+              onLoadNextMission={handleLoadNextMission}
+              linkMode={linkMode}
+            />
+          </View>
         </View>
       ) : null}
 
@@ -447,6 +506,7 @@ const styles = StyleSheet.create({
   },
   offlineSlot: {position: 'absolute'},
   simSlot: {position: 'absolute'},
+  simColumn: {gap: 10},
   cameraSlot: {position: 'absolute'},
   planningSlot: {position: 'absolute', zIndex: 30},
 });

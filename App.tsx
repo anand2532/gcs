@@ -11,7 +11,7 @@
 import 'react-native-gesture-handler';
 
 import React from 'react';
-import {StatusBar} from 'react-native';
+import {LogBox, StatusBar} from 'react-native';
 
 import {enableFreeze} from 'react-native-screens';
 
@@ -21,6 +21,13 @@ import {log} from './src/core/logger/Logger';
 import {BootSplashGate} from './src/ui/components/BootSplashGate';
 
 enableFreeze(true);
+
+if (__DEV__) {
+  LogBox.ignoreLogs([
+    // MapLibre cancels in-flight HTTP tile fetches when unmounting or swapping styles.
+    'Request failed due to a permanent error: Canceled',
+  ]);
+}
 
 log.app.info('boot');
 
