@@ -21,7 +21,10 @@ import Animated, {
 // eslint-disable-next-line import/no-named-as-default
 import Svg, {Circle, Path} from 'react-native-svg';
 
-import {type MapStyleVariant} from '../../../core/constants/map';
+import {
+  type MapStyleVariant,
+  MAP_STYLE_CYCLE_ORDER,
+} from '../../../core/constants/map';
 import {
   SimRunState,
   type MissionPreset,
@@ -275,11 +278,21 @@ const armStyles = StyleSheet.create({
   },
 });
 
+const VARIANT_SHORT: Record<MapStyleVariant, string> = {
+  satellite: 'SAT',
+  hybrid: 'HYB',
+  street: 'STR',
+  terrain: 'TER',
+  tactical: 'TAC',
+};
+
 interface OfflineControlsProps {
   readonly variant: MapStyleVariant;
   readonly onToggleVariant: () => void;
   readonly download: UseOfflineDownloadState;
   readonly onDownloadPress: () => void;
+  readonly online?: boolean;
+  readonly degraded?: boolean;
 }
 
 export function OfflineControls({
@@ -287,6 +300,8 @@ export function OfflineControls({
   onToggleVariant,
   download,
   onDownloadPress,
+  online = true,
+  degraded = false,
 }: OfflineControlsProps): React.JSX.Element {
   const isWorking = download.status === OfflineDownloadStatus.Working;
   const isComplete = download.status === OfflineDownloadStatus.Complete;
@@ -306,18 +321,18 @@ export function OfflineControls({
     ? 'danger'
     : 'cyan';
 
+  const idx = MAP_STYLE_CYCLE_ORDER.indexOf(variant);
+  const nextVariant = MAP_STYLE_CYCLE_ORDER[(idx + 1) % MAP_STYLE_CYCLE_ORDER.length]!;
+  const mapLabel = `${VARIANT_SHORT[variant]}${!online ? ' ·⌁' : ''}${degraded ? ' ·◌' : ''}`;
+
   return (
     <View style={styles.row}>
       <FAB
-        accessibilityLabel={
-          variant === 'satellite'
-            ? 'Switch to hybrid map (satellite + labels)'
-            : 'Switch to satellite-only map'
-        }
-        glyph={variant === 'satellite' ? '◐' : '◑'}
-        label={variant === 'satellite' ? 'SAT' : 'HYB'}
+        accessibilityLabel={`Cycle basemap (next ${VARIANT_SHORT[nextVariant]})`}
+        glyph="◎"
+        label={mapLabel}
         tone="cyan"
-        active={variant === 'hybrid'}
+        active={variant !== 'satellite'}
         onPress={onToggleVariant}
       />
       <View style={styles.gapH} />

@@ -6,6 +6,7 @@
  */
 
 import {storage} from './storage';
+import {type MapStyleVariant} from '../../core/constants/map';
 import {SIM_DEFAULTS} from '../../core/constants/sim';
 import {type MapCameraState} from '../../core/types/geo';
 import {type PlannedMissionDraft} from '../../core/types/missionPlanning';
@@ -26,7 +27,7 @@ export const StorageKeys = {
 
 export const MAP_CAMERA_VERSION = 2;
 export const MAP_FOLLOW_VERSION = 1;
-export const MAP_VARIANT_VERSION = 1;
+export const MAP_VARIANT_VERSION = 2;
 export const SIM_CONFIG_VERSION = 1;
 export const MISSION_PLANNING_DRAFT_VERSION = 1;
 export const MISSION_PLANNING_UI_VERSION = 1;
@@ -89,18 +90,18 @@ export const MapFollowStore = {
 };
 
 export interface PersistedMapVariant {
-  readonly variant: 'satellite' | 'hybrid';
+  readonly variant: MapStyleVariant;
 }
 
 export const MapVariantStore = {
-  load(): 'satellite' | 'hybrid' {
+  load(): MapStyleVariant {
     const v = storage.getVersioned<PersistedMapVariant>(
       StorageKeys.MapVariant,
       MAP_VARIANT_VERSION,
     );
     return v?.variant ?? 'satellite';
   },
-  save(variant: 'satellite' | 'hybrid'): void {
+  save(variant: MapStyleVariant): void {
     storage.setVersioned(StorageKeys.MapVariant, MAP_VARIANT_VERSION, {
       variant,
     });

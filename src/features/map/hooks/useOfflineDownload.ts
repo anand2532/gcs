@@ -15,8 +15,9 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {type MapViewRef} from '@maplibre/maplibre-react-native';
 
 import {
+  MAP_STYLE_URL_VARIANTS,
   OFFLINE_PREFETCH_DEFAULTS,
-  OFFLINE_STYLE_URL,
+  type MapStyleVariant,
 } from '../../../core/constants/map';
 import {log} from '../../../core/logger/Logger';
 import {
@@ -47,7 +48,11 @@ export interface UseOfflineDownloadState {
 
 export interface UseOfflineDownload extends UseOfflineDownloadState {
   /** Trigger a download of the currently-visible viewport. No-op while busy. */
-  downloadVisible(opts?: {minZoom?: number; maxZoom?: number}): Promise<void>;
+  downloadVisible(opts?: {
+    minZoom?: number;
+    maxZoom?: number;
+    styleVariant?: MapStyleVariant;
+  }): Promise<void>;
   /** Reset the overlay back to idle (use after the pilot acknowledges). */
   reset(): void;
 }
@@ -82,7 +87,11 @@ export function useOfflineDownload({
   }, []);
 
   const downloadVisible = useCallback(
-    async (opts?: {minZoom?: number; maxZoom?: number}) => {
+    async (opts?: {
+      minZoom?: number;
+      maxZoom?: number;
+      styleVariant?: MapStyleVariant;
+    }) => {
       if (inFlight.current) {
         log.map.warn('offline.download.skip', {reason: 'in-flight'});
         return;
@@ -95,6 +104,8 @@ export function useOfflineDownload({
       inFlight.current = true;
       const minZoom = opts?.minZoom ?? OFFLINE_PREFETCH_DEFAULTS.minZoom;
       const maxZoom = opts?.maxZoom ?? OFFLINE_PREFETCH_DEFAULTS.maxZoom;
+      const styleVariant = opts?.styleVariant ?? 'satellite';
+      const styleURL = MAP_STYLE_URL_VARIANTS[styleVariant];
 
       try {
         const visible = await ref.getVisibleBounds();
@@ -117,7 +128,7 @@ export function useOfflineDownload({
         await OfflineMapManager.downloadVisibleArea(
           {
             name,
-            styleURL: OFFLINE_STYLE_URL,
+            styleURL,
             bounds: {ne, sw},
             minZoom,
             maxZoom,
@@ -127,6 +138,7 @@ export function useOfflineDownload({
               maxZoom,
               ne,
               sw,
+              styleVariant,
             },
           },
           (p: OfflinePackProgress) => {

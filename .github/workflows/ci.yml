@@ -97,31 +97,40 @@ jobs:
       - name: Build iOS (Simulator)
         run: |
           set -eo pipefail
-          # Generic simulator destination is flaky on GitHub-hosted macOS (xcodebuild exit 65).
-          # Pick any available iPhone simulator by UDID so the destination always resolves.
-          UDID="$(python3 - <<'PY'
+          # Pick an available iPhone simulator by UDID (json shape varies by Xcode).
+          # Validates dict/list entries before iterating — avoids Python exceptions on CI.
+          DEST="$(python3 - <<'PY'
           import json, subprocess, sys
           raw = subprocess.check_output(
               ["xcrun", "simctl", "list", "devices", "available", "-j"],
               text=True,
           )
           data = json.loads(raw)
+          # Prefer newest runtime order (dict iteration order is runtime id).
           for _runtime, devs in data.get("devices", {}).items():
+              if not isinstance(devs, list):
+                  continue
               for d in devs:
-                  if d.get("isAvailable") and "iPhone" in d.get("name", ""):
-                      print(d["udid"])
+                  if not isinstance(d, dict):
+                      continue
+                  if d.get("isAvailable") is False:
+                      continue
+                  name = d.get("name") or ""
+                  udid = d.get("udid")
+                  if "iPhone" in name and udid:
+                      print(f"id={udid}")
                       sys.exit(0)
           print("No available iPhone simulator found", file=sys.stderr)
           sys.exit(1)
           PY
           )"
-          echo "Building for simulator UDID=$UDID"
+          echo "xcodebuild destination: $DEST"
           xcodebuild \
             -workspace ios/GCS.xcworkspace \
             -scheme GCS \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination "id=$UDID" \
+            -destination "$DEST" \
             -derivedDataPath ios/build-ci \
             CODE_SIGNING_ALLOWED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \

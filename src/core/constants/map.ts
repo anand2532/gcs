@@ -32,6 +32,19 @@ const ESRI_SAT_TPL =
 const ESRI_HYBRID_OVERLAY_TPL =
   'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
+/** Esri World Topo — terrain / situational awareness basemap. */
+const ESRI_TOPO_TPL =
+  'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+
+const ESRI_TOPO_ATTRIBUTION =
+  'Tiles &copy; Esri &mdash; Sources: Esri, HERE, Garmin, FAO, NOAA, USGS';
+
+/** OSM raster tiles — street reference (respect OSM tile usage policy). */
+const OSM_STREET_TPL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
 const ESRI_ATTRIBUTION =
   'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP';
 
@@ -105,6 +118,111 @@ export const SATELLITE_STYLE: MapLibreStyle = {
   ],
 };
 
+export const TERRAIN_STYLE: MapLibreStyle = {
+  version: 8,
+  name: 'GCS Terrain',
+  sources: {
+    'esri-topo': {
+      type: 'raster',
+      tiles: [ESRI_TOPO_TPL],
+      tileSize: 256,
+      minzoom: 0,
+      maxzoom: MAP_MAX_RASTER_ZOOM,
+      attribution: ESRI_TOPO_ATTRIBUTION,
+      scheme: 'xyz',
+    },
+  },
+  layers: [
+    {
+      id: 'background',
+      type: 'background',
+      paint: {'background-color': '#0a1628'},
+    },
+    {
+      id: 'esri-topo',
+      type: 'raster',
+      source: 'esri-topo',
+      minzoom: 0,
+      maxzoom: 22,
+      paint: {
+        'raster-opacity': 1,
+        'raster-fade-duration': 160,
+      },
+    },
+  ],
+};
+
+export const STREET_STYLE: MapLibreStyle = {
+  version: 8,
+  name: 'GCS Street',
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: [OSM_STREET_TPL],
+      tileSize: 256,
+      minzoom: 0,
+      maxzoom: 19,
+      attribution: OSM_ATTRIBUTION,
+      scheme: 'xyz',
+    },
+  },
+  layers: [
+    {
+      id: 'background',
+      type: 'background',
+      paint: {'background-color': '#1a1f28'},
+    },
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+      minzoom: 0,
+      maxzoom: 22,
+      paint: {
+        'raster-opacity': 1,
+        'raster-fade-duration': 140,
+      },
+    },
+  ],
+};
+
+/** Dimmed imagery + dark field — tactical night / high-contrast outdoor use. */
+export const TACTICAL_STYLE: MapLibreStyle = {
+  version: 8,
+  name: 'GCS Tactical',
+  sources: {
+    'esri-imagery': {
+      type: 'raster',
+      tiles: [ESRI_SAT_TPL],
+      tileSize: 256,
+      minzoom: 0,
+      maxzoom: MAP_MAX_RASTER_ZOOM,
+      attribution: ESRI_ATTRIBUTION,
+      scheme: 'xyz',
+    },
+  },
+  layers: [
+    {
+      id: 'background',
+      type: 'background',
+      paint: {'background-color': '#050508'},
+    },
+    {
+      id: 'esri-imagery',
+      type: 'raster',
+      source: 'esri-imagery',
+      minzoom: 0,
+      maxzoom: 22,
+      paint: {
+        'raster-opacity': 0.82,
+        'raster-fade-duration': 200,
+        'raster-brightness-max': 0.95,
+        'raster-saturation': 0.55,
+      },
+    },
+  ],
+};
+
 export const HYBRID_STYLE: MapLibreStyle = {
   version: 8,
   name: 'GCS Hybrid',
@@ -162,9 +280,21 @@ export const HYBRID_STYLE: MapLibreStyle = {
 export const MAP_STYLE_VARIANTS = {
   satellite: SATELLITE_STYLE,
   hybrid: HYBRID_STYLE,
+  street: STREET_STYLE,
+  terrain: TERRAIN_STYLE,
+  tactical: TACTICAL_STYLE,
 } as const;
 
 export type MapStyleVariant = keyof typeof MAP_STYLE_VARIANTS;
+
+/** UI cycle order for the map style FAB. */
+export const MAP_STYLE_CYCLE_ORDER: readonly MapStyleVariant[] = [
+  'satellite',
+  'hybrid',
+  'street',
+  'terrain',
+  'tactical',
+] as const;
 
 /**
  * Native-bundled style URLs used at *runtime* (live map) AND at *download
@@ -180,13 +310,19 @@ export type MapStyleVariant = keyof typeof MAP_STYLE_VARIANTS;
  */
 export const SATELLITE_STYLE_URL = 'asset://styles/gcs-satellite-style.json';
 export const HYBRID_STYLE_URL = 'asset://styles/gcs-hybrid-style.json';
+export const STREET_STYLE_URL = 'asset://styles/gcs-street-style.json';
+export const TERRAIN_STYLE_URL = 'asset://styles/gcs-terrain-style.json';
+export const TACTICAL_STYLE_URL = 'asset://styles/gcs-tactical-style.json';
 
 export const MAP_STYLE_URL_VARIANTS: Record<MapStyleVariant, string> = {
   satellite: SATELLITE_STYLE_URL,
   hybrid: HYBRID_STYLE_URL,
+  street: STREET_STYLE_URL,
+  terrain: TERRAIN_STYLE_URL,
+  tactical: TACTICAL_STYLE_URL,
 };
 
-/** Used by `OfflineManager.createPack` so cached tiles match the live map. */
+/** Default offline pack style — satellite imagery is the primary field baseline. */
 export const OFFLINE_STYLE_URL = SATELLITE_STYLE_URL;
 
 export const MAP_DEFAULTS = {

@@ -23,7 +23,7 @@
  *     screen but later phases may swap it out).
  */
 
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   AppState,
   StatusBar,
@@ -42,6 +42,10 @@ import {mavlinkTelemetrySource} from '../../../communication/MavlinkTelemetrySou
 import {type MapStyleVariant} from '../../../core/constants/map';
 import {LogLevel, log} from '../../../core/logger/Logger';
 import {type GeoPoint} from '../../../core/types/geo';
+import {
+  bindGeofenceTelemetryEvaluation,
+  useOperationalBasemap,
+} from '../../../modules/geospatial';
 import {OfflineMapManager} from '../../../modules/offline';
 import {
   LinkProfileStore,
@@ -69,6 +73,7 @@ import {MissionPlanningOverlays} from '../../mission-planning/components/Mission
 import {MissionPlanningPanel} from '../../mission-planning/components/MissionPlanningPanel';
 import {useMissionPlanning} from '../../mission-planning/hooks/useMissionPlanning';
 import {useTerminalPacketStore} from '../../telemetry-terminal/state/terminalPacketStore';
+import {AirspaceOverlay} from '../components/AirspaceOverlay';
 import {DroneMarker} from '../components/DroneMarker';
 import {FlightTrail} from '../components/FlightTrail';
 import {LinkProfileToggle} from '../components/LinkProfileToggle';
@@ -77,12 +82,13 @@ import {
   OfflineControls,
   SimControls,
 } from '../components/MapControls';
-import {MapView} from '../components/MapView';
+import {MapView, type MapCameraIdleEvent} from '../components/MapView';
 import {OfflineProgressOverlay} from '../components/OfflineProgressOverlay';
 import {useMapCamera} from '../hooks/useMapCamera';
 import {useOfflineDownload} from '../hooks/useOfflineDownload';
 
 bindBusToStore();
+bindGeofenceTelemetryEvaluation();
 
 export function MapHomeScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -94,8 +100,33 @@ export function MapHomeScreen(): React.JSX.Element {
   const mapViewRef = useRef<MapViewRef | null>(null);
   const offline = useOfflineDownload({mapViewRef});
 
-  const [variant, setVariant] = useState<MapStyleVariant>(() =>
+  const [preferredVariant, setPreferredVariant] = useState<MapStyleVariant>(() =>
     MapVariantStore.load(),
+  );
+
+  const persistVariant = useCallback((next: MapStyleVariant) => {
+    setPreferredVariant(next);
+    MapVariantStore.save(next);
+    log.map.event('style.set', {variant: next});
+  }, []);
+
+  const [mapCenter, setMapCenter] = useState(() => ({
+    lon: camera.initialCamera.center.lon,
+    lat: camera.initialCamera.center.lat,
+  }));
+
+  const basemap = useOperationalBasemap(
+    preferredVariant,
+    persistVariant,
+    mapCenter,
+  );
+
+  const handleCameraIdleCombined = useCallback(
+    (e: MapCameraIdleEvent) => {
+      camera.handleCameraIdle(e);
+      setMapCenter({lon: e.center[0], lat: e.center[1]});
+    },
+    [camera],
   );
 
   const [linkProfile, setLinkProfile] = useState<PersistedLinkProfile>(() =>
@@ -259,15 +290,10 @@ export function MapHomeScreen(): React.JSX.Element {
     useTelemetryStore.getState().setArmed(!armed);
   };
 
-  const handleToggleVariant = (): void => {
-    const next: MapStyleVariant = variant === 'satellite' ? 'hybrid' : 'satellite';
-    setVariant(next);
-    MapVariantStore.save(next);
-    log.map.event('style.toggle', {variant: next});
-  };
-
   const handleDownload = (): void => {
-    offline.downloadVisible().catch(() => undefined);
+    offline
+      .downloadVisible({styleVariant: preferredVariant})
+      .catch(() => undefined);
   };
 
   const handleMapPress = (lngLat: [number, number]): void => {
@@ -328,10 +354,11 @@ export function MapHomeScreen(): React.JSX.Element {
       <View style={StyleSheet.absoluteFill}>
         <MapView
           ref={mapViewRef}
-          variant={variant}
+          variant={basemap.effectiveVariant}
+          mapStyle={basemap.styleURL}
           onMapPress={handleMapPress}
           onMapLongPress={handleMapLongPress}
-          onCameraIdle={camera.handleCameraIdle}
+          onCameraIdle={handleCameraIdleCombined}
           onUserPan={camera.handleUserPan}>
           <Camera
             ref={camera.cameraRef}
@@ -343,6 +370,7 @@ export function MapHomeScreen(): React.JSX.Element {
             }}
           />
           <FlightTrail />
+          <AirspaceOverlay />
           {isMapFocused ? (
             <MissionPlanningOverlays
               polygon={planning.state.editor.points}
@@ -391,10 +419,12 @@ export function MapHomeScreen(): React.JSX.Element {
             {top: insets.top + 96, left: theme.spacing.lg},
           ]}>
           <OfflineControls
-            variant={variant}
-            onToggleVariant={handleToggleVariant}
+            variant={basemap.preferredVariant}
+            onToggleVariant={basemap.cyclePreferredVariant}
             download={offline}
             onDownloadPress={handleDownload}
+            online={basemap.online}
+            degraded={basemap.degraded}
           />
         </View>
       ) : null}
