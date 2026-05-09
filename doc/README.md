@@ -7,6 +7,7 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 | Document | Description |
 |----------|-------------|
 | [features-overview.md](features-overview.md) | Feature matrix and mapping to `src/` folders |
+| [telemetry-terminal.md](telemetry-terminal.md) | Telemetry Terminal: logs, export, inspectors, perf hooks |
 | [architecture.md](architecture.md) | Layers, navigation, and data flow |
 | [telemetry-pipeline.md](telemetry-pipeline.md) | Bus, Zustand store, watchdog, HUD throttling |
 | [simulation-engine.md](simulation-engine.md) | Sim tick loop, missions, `TelemetrySource` contract |
@@ -22,5 +23,5 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 
 - **New contributors:** `architecture.md`, `development-workflow.md`, `contributing.md`, `libraries.md`.
 - **Map / UX work:** `map-and-maplibre.md`, `offline-maps.md`.
-- **Telemetry / simulation:** `telemetry-pipeline.md`, `simulation-engine.md`.
+- **Telemetry / simulation:** `telemetry-pipeline.md`, `simulation-engine.md`, `telemetry-terminal.md` (developer terminal UI).
 - **Mission planning:** `mission-planning.md`, `persistence.md`.

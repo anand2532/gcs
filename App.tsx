@@ -13,10 +13,14 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import {StatusBar} from 'react-native';
 
+import {enableFreeze} from 'react-native-screens';
+
 import {RootNavigator} from './src/app/navigation/RootNavigator';
 import {AppProviders} from './src/app/providers/AppProviders';
 import {log} from './src/core/logger/Logger';
 import {BootSplashGate} from './src/ui/components/BootSplashGate';
+
+enableFreeze(true);
 
 log.app.info('boot');
 

@@ -23,6 +23,8 @@ import {
   type TelemetryFrame,
 } from '../../core/types/telemetry';
 import {trailingThrottle} from '../../core/utils/throttle';
+import {TacticalCommandGlyph} from '../../features/command-center/components/TacticalCommandGlyph';
+import {useCommandCenterStore} from '../../features/command-center/state/commandCenterStore';
 import {useTelemetryStore} from '../../modules/telemetry';
 import {CompassWidget} from '../components/CompassWidget';
 import {GlassPanel} from '../components/GlassPanel';
@@ -74,6 +76,7 @@ function frameToSnapshot(
 }
 
 export function HudBar(): React.JSX.Element {
+  const commandOpen = useCommandCenterStore(s => s.open);
   const connection = useTelemetryStore(s => s.connection);
   const [snap, setSnap] = useState<HudSnapshot>(EMPTY_SNAPSHOT);
 
@@ -109,8 +112,12 @@ export function HudBar(): React.JSX.Element {
       pointerEvents="box-none"
       style={[
         styles.row,
-        {paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.sm},
+        {paddingHorizontal: theme.spacing.lg, paddingTop: 0},
       ]}>
+      <TacticalCommandGlyph
+        open={commandOpen}
+        onPress={() => useCommandCenterStore.getState().toggle()}
+      />
       <GlassPanel
         elevated
         style={[

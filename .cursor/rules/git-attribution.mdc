@@ -1,0 +1,10 @@
+---
+description: Do not attribute commits or PRs to Cursor in git metadata.
+alwaysApply: true
+---
+
+# Git attribution
+
+For this repository, do **not** add `Co-authored-by: Cursor <cursoragent@cursor.com>` or any Cursor/agent co-author trailer to commit messages. Use only the human maintainer as author; agent work is not credited separately in git.
+
+Project CLI sessions merge `.cursor/cli.json` with `attributeCommitsToAgent` / `attributePRsToAgent` disabled. In the Cursor IDE, turn off **Settings → Agent → Attribution** (or equivalent) so IDE commits match this policy.

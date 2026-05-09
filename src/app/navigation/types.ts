@@ -5,6 +5,7 @@
 
 export type RootStackParamList = {
   MapHome: undefined;
+  TelemetryTerminal: undefined;
 };
 
 declare global {

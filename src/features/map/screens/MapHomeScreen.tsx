@@ -34,6 +34,7 @@ import {
 } from 'react-native';
 
 import {Camera, type MapViewRef} from '@maplibre/maplibre-react-native';
+import {useIsFocused} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {type MapStyleVariant} from '../../../core/constants/map';
@@ -58,6 +59,7 @@ import {
 } from '../../../modules/telemetry';
 import {HudBar} from '../../../ui/HUD/HudBar';
 import {useTheme} from '../../../ui/theme/ThemeProvider';
+import {CommandCenterRoot} from '../../command-center/CommandCenterRoot';
 import {MissionPlanningOverlays} from '../../mission-planning/components/MissionPlanningOverlays';
 import {MissionPlanningPanel} from '../../mission-planning/components/MissionPlanningPanel';
 import {useMissionPlanning} from '../../mission-planning/hooks/useMissionPlanning';
@@ -79,6 +81,7 @@ export function MapHomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const {width: screenWidth} = useWindowDimensions();
+  const isMapFocused = useIsFocused();
   const camera = useMapCamera();
 
   const mapViewRef = useRef<MapViewRef | null>(null);
@@ -105,7 +108,7 @@ export function MapHomeScreen(): React.JSX.Element {
     simulationEngine.listMissionPresets(),
   );
 
-  const PLANNER_TOP_DOCK = insets.top + 108;
+  const PLANNER_TOP_DOCK = insets.top + 202;
   const PLANNER_GAP = 12;
   const PLANNER_MIN_HEIGHT = 56;
 
@@ -288,11 +291,13 @@ export function MapHomeScreen(): React.JSX.Element {
             }}
           />
           <FlightTrail />
-          <MissionPlanningOverlays
-            polygon={planning.state.editor.points}
-            path={planning.generatedPath}
-            selectedIndex={planning.state.editor.selectedIndex}
-          />
+          {isMapFocused ? (
+            <MissionPlanningOverlays
+              polygon={planning.state.editor.points}
+              path={planning.generatedPath}
+              selectedIndex={planning.state.editor.selectedIndex}
+            />
+          ) : null}
           <DroneMarker
             initialCoordinate={[
               camera.initialCamera.center.lon,
@@ -304,114 +309,128 @@ export function MapHomeScreen(): React.JSX.Element {
         </MapView>
       </View>
 
-      <SafeAreaView
-        edges={['top', 'left', 'right']}
-        pointerEvents="box-none"
-        style={styles.safe}>
-        <HudBar />
-      </SafeAreaView>
+      <CommandCenterRoot />
 
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.overlaySlot,
-          {top: insets.top + 96},
-        ]}>
-        <OfflineProgressOverlay {...offline} onDismiss={offline.reset} />
-      </View>
+      {isMapFocused ? (
+        <SafeAreaView
+          edges={['top', 'left', 'right']}
+          pointerEvents="box-none"
+          style={styles.safe}>
+          <HudBar />
+        </SafeAreaView>
+      ) : null}
 
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.offlineSlot,
-          {top: insets.top + 96, left: theme.spacing.lg},
-        ]}>
-        <OfflineControls
-          variant={variant}
-          onToggleVariant={handleToggleVariant}
-          download={offline}
-          onDownloadPress={handleDownload}
-        />
-      </View>
+      {isMapFocused ? (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.overlaySlot,
+            {top: insets.top + 96},
+          ]}>
+          <OfflineProgressOverlay {...offline} onDismiss={offline.reset} />
+        </View>
+      ) : null}
 
-      <View
-        onLayout={handlePlannerLayout}
-        pointerEvents="box-none"
-        style={[
-          styles.planningSlot,
-          {
-            top: plannerTop,
-            right: theme.spacing.lg,
-            width: plannerMinimized
-              ? 150
-              : Math.max(240, Math.min(340, screenWidth - theme.spacing.lg * 2)),
-          },
-        ]}>
-        <MissionPlanningPanel
-          enabled={planning.state.enabled}
-          pointCount={planning.state.editor.points.length}
-          placementMode={placementMode}
-          minimized={plannerMinimized}
-          validation={planning.validation}
-          spacingM={planning.state.survey.spacingM}
-          overlapPct={planning.state.survey.overlapPct}
-          altitudeM={planning.state.survey.altitudeM}
-          onToggleMinimized={() => setPlannerMinimized(v => !v)}
-          onToggleEnabled={planning.actions.toggleEnabled}
-          onUndo={planning.actions.undo}
-          onRedo={planning.actions.redo}
-          onRemoveLastPoint={planning.actions.removeLastPoint}
-          onSetTakeoffMode={() => setPlacementMode('takeoff')}
-          onSetLandingMode={() => setPlacementMode('landing')}
-          onClearPlacementMode={() => setPlacementMode('none')}
-          onRunPreview={planning.actions.runPreviewInSimulation}
-          onSpacingUp={() =>
-            planning.actions.setSpacing(Math.min(80, planning.state.survey.spacingM + 2))
-          }
-          onSpacingDown={() =>
-            planning.actions.setSpacing(Math.max(6, planning.state.survey.spacingM - 2))
-          }
-          onAltitudeUp={() =>
-            planning.actions.setAltitude(Math.min(140, planning.state.survey.altitudeM + 5))
-          }
-          onAltitudeDown={() =>
-            planning.actions.setAltitude(Math.max(20, planning.state.survey.altitudeM - 5))
-          }
-        />
-      </View>
+      {isMapFocused ? (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.offlineSlot,
+            {top: insets.top + 96, left: theme.spacing.lg},
+          ]}>
+          <OfflineControls
+            variant={variant}
+            onToggleVariant={handleToggleVariant}
+            download={offline}
+            onDownloadPress={handleDownload}
+          />
+        </View>
+      ) : null}
 
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.simSlot,
-          {bottom: insets.bottom + theme.spacing.lg, left: theme.spacing.lg},
-        ]}>
-        <SimControls
-          state={simState}
-          presets={missionPresets}
-          onStart={handleStart}
-          onPause={handlePause}
-          onResume={handleResume}
-          onReset={handleReset}
-          onLoadNextMission={handleLoadNextMission}
-        />
-      </View>
+      {isMapFocused ? (
+        <View
+          onLayout={handlePlannerLayout}
+          pointerEvents="box-none"
+          style={[
+            styles.planningSlot,
+            {
+              top: plannerTop,
+              right: theme.spacing.lg,
+              width: plannerMinimized
+                ? 150
+                : Math.max(240, Math.min(340, screenWidth - theme.spacing.lg * 2)),
+            },
+          ]}>
+          <MissionPlanningPanel
+            enabled={planning.state.enabled}
+            pointCount={planning.state.editor.points.length}
+            placementMode={placementMode}
+            minimized={plannerMinimized}
+            validation={planning.validation}
+            spacingM={planning.state.survey.spacingM}
+            overlapPct={planning.state.survey.overlapPct}
+            altitudeM={planning.state.survey.altitudeM}
+            onToggleMinimized={() => setPlannerMinimized(v => !v)}
+            onToggleEnabled={planning.actions.toggleEnabled}
+            onUndo={planning.actions.undo}
+            onRedo={planning.actions.redo}
+            onRemoveLastPoint={planning.actions.removeLastPoint}
+            onSetTakeoffMode={() => setPlacementMode('takeoff')}
+            onSetLandingMode={() => setPlacementMode('landing')}
+            onClearPlacementMode={() => setPlacementMode('none')}
+            onRunPreview={planning.actions.runPreviewInSimulation}
+            onSpacingUp={() =>
+              planning.actions.setSpacing(Math.min(80, planning.state.survey.spacingM + 2))
+            }
+            onSpacingDown={() =>
+              planning.actions.setSpacing(Math.max(6, planning.state.survey.spacingM - 2))
+            }
+            onAltitudeUp={() =>
+              planning.actions.setAltitude(Math.min(140, planning.state.survey.altitudeM + 5))
+            }
+            onAltitudeDown={() =>
+              planning.actions.setAltitude(Math.max(20, planning.state.survey.altitudeM - 5))
+            }
+          />
+        </View>
+      ) : null}
 
-      <View
-        onLayout={handleCameraRailLayout}
-        pointerEvents="box-none"
-        style={[
-          styles.cameraSlot,
-          {bottom: insets.bottom + theme.spacing.lg, right: theme.spacing.lg},
-        ]}>
-        <CameraControls
-          followDrone={camera.followDrone}
-          onToggleFollow={handleToggleFollow}
-          onRecenter={camera.recenter}
-          onZoomIn={camera.zoomIn}
-          onZoomOut={camera.zoomOut}
-        />
-      </View>
+      {isMapFocused ? (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.simSlot,
+            {bottom: insets.bottom + theme.spacing.lg, left: theme.spacing.lg},
+          ]}>
+          <SimControls
+            state={simState}
+            presets={missionPresets}
+            onStart={handleStart}
+            onPause={handlePause}
+            onResume={handleResume}
+            onReset={handleReset}
+            onLoadNextMission={handleLoadNextMission}
+          />
+        </View>
+      ) : null}
+
+      {isMapFocused ? (
+        <View
+          onLayout={handleCameraRailLayout}
+          pointerEvents="box-none"
+          style={[
+            styles.cameraSlot,
+            {bottom: insets.bottom + theme.spacing.lg, right: theme.spacing.lg},
+          ]}>
+          <CameraControls
+            followDrone={camera.followDrone}
+            onToggleFollow={handleToggleFollow}
+            onRecenter={camera.recenter}
+            onZoomIn={camera.zoomIn}
+            onZoomOut={camera.zoomOut}
+          />
+        </View>
+      ) : null}
 
     </View>
   );
@@ -419,7 +438,7 @@ export function MapHomeScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
-  safe: {position: 'absolute', top: 0, left: 0, right: 0},
+  safe: {position: 'absolute', top: 0, left: 0, right: 0, zIndex: 42},
   overlaySlot: {
     position: 'absolute',
     left: 0,
