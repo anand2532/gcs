@@ -37,6 +37,7 @@ import Animated, {
 // eslint-disable-next-line import/no-named-as-default
 import Svg, {Circle, Line, Path} from 'react-native-svg';
 
+import {CommandIdentityMark} from '../identity/CommandIdentityMark';
 import {useTheme} from '../theme/ThemeProvider';
 
 interface BootSplashProps {
@@ -234,25 +235,9 @@ export function BootSplash({
             </Svg>
           </Animated.View>
 
-          {/* Quadcopter mark — same glyph as the map marker */}
+          {/* Quadcopter mark — shared CommandIdentityMark */}
           <Animated.View style={[styles.center, bodyStyle]}>
-            <Svg width={BODY_BOX} height={BODY_BOX} viewBox={`0 0 ${BODY_BOX} ${BODY_BOX}`}>
-              {/* Forward arrow */}
-              <Path d={`M${BODY_BOX / 2} 6 L${BODY_BOX / 2 - 12} 30 L${BODY_BOX / 2 + 12} 30 Z`} fill={cyan} />
-              {/* Body cross */}
-              <Path
-                d="M48 28 L84 28 L84 48 L106 48 L106 84 L84 84 L84 106 L48 106 L48 84 L26 84 L26 48 L48 48 Z"
-                fill="rgba(10,15,22,0.94)"
-                stroke={cyan}
-                strokeWidth={2}
-                strokeLinejoin="round"
-              />
-              <Circle cx={BODY_BOX / 2} cy={BODY_BOX / 2} r={6} fill={cyan} />
-              <Circle cx={32} cy={32} r={5} fill={cyan} />
-              <Circle cx={BODY_BOX - 32} cy={32} r={5} fill={cyan} />
-              <Circle cx={32} cy={BODY_BOX - 32} r={5} fill={cyan} />
-              <Circle cx={BODY_BOX - 32} cy={BODY_BOX - 32} r={5} fill={cyan} />
-            </Svg>
+            <CommandIdentityMark size={BODY_BOX} accent={cyan} />
           </Animated.View>
         </View>
 
