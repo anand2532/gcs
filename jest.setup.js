@@ -43,6 +43,18 @@ jest.mock('react-native-mmkv', () => {
   return {MMKV};
 });
 
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  default: {
+    addEventListener: (cb) => {
+      cb({isConnected: true, isInternetReachable: true});
+      return () => {};
+    },
+    fetch: () =>
+      Promise.resolve({isConnected: true, isInternetReachable: true}),
+  },
+}));
+
 // MapLibre is a native module — mock it for Jest. The mock surface mirrors
 // the parts of `@maplibre/maplibre-react-native` the app touches, including
 // the OfflineManager + OfflinePack singletons used for tile pre-fetch.

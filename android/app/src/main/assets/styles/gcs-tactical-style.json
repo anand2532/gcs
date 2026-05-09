@@ -1,0 +1,33 @@
+{
+  "version": 8,
+  "name": "GCS Tactical",
+  "sources": {
+    "esri-imagery": {
+      "type": "raster",
+      "tiles": [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+      ],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 19,
+      "attribution": "Tiles &copy; Esri",
+      "scheme": "xyz"
+    }
+  },
+  "layers": [
+    {"id": "background", "type": "background", "paint": {"background-color": "#050508"}},
+    {
+      "id": "esri-imagery",
+      "type": "raster",
+      "source": "esri-imagery",
+      "minzoom": 0,
+      "maxzoom": 22,
+      "paint": {
+        "raster-opacity": 0.82,
+        "raster-fade-duration": 200,
+        "raster-brightness-max": 0.95,
+        "raster-saturation": 0.55
+      }
+    }
+  ]
+}

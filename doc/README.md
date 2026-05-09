@@ -17,6 +17,12 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 | [mission-planning.md](mission-planning.md) | Polygon editor, survey paths, validation limits |
 | [persistence.md](persistence.md) | MMKV storage and versioned keys |
 | [offline-maps.md](offline-maps.md) | Offline tile packs and download UX |
+| [geospatial/offline-architecture.md](geospatial/offline-architecture.md) | Basemap resolution, packs, region catalog (`src/modules/geospatial`) |
+| [geospatial/tile-cache-strategy.md](geospatial/tile-cache-strategy.md) | Tile limits, ambient cache policy hooks |
+| [geospatial/airspace-sync.md](geospatial/airspace-sync.md) | Local airspace GeoJSON, sync adapter seam |
+| [geospatial/geofence-engine.md](geospatial/geofence-engine.md) | Zones, telemetry violation path |
+| [geospatial/safety-validation.md](geospatial/safety-validation.md) | `validateMissionOperational` orchestration |
+| [geospatial/map-rendering-performance.md](geospatial/map-rendering-performance.md) | Overlay registry batching |
 | [libraries.md](libraries.md) | npm dependencies and how they are used |
 | [development-workflow.md](development-workflow.md) | validate script, Metro ports, adb, device checks |
 | [contributing.md](contributing.md) | GitHub issues, branches, PRs, code review, labels |
@@ -24,6 +30,6 @@ Extended documentation for the UAV ground control mobile application (`gcs`). Th
 ## Who should read what
 
 - **New contributors:** `setup-and-build/setup-and-build.md`, `architecture.md`, `development-workflow.md`, `contributing.md`, `libraries.md`.
-- **Map / UX work:** `map-and-maplibre.md`, `offline-maps.md`.
+- **Map / UX work:** `map-and-maplibre.md`, `offline-maps.md`, `geospatial/*.md`.
 - **Telemetry / simulation / live link:** `telemetry-pipeline.md`, `communication.md`, `simulation-engine.md`, `telemetry-terminal.md`.
 - **Mission planning:** `mission-planning.md`, `persistence.md`.
