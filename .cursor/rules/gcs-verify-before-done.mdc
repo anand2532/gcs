@@ -8,6 +8,6 @@ alwaysApply: true
 When finishing changes under `src/`, `android/`, `ios/`, `.github/workflows/`, `scripts/`, or anything that affects builds or telemetry/simulation:
 
 1. Run **`npm run validate:all`** (lint, tests, typecheck, native version check, `assembleDebug`).
-2. If the task involves **on-device USB verification** and `adb devices` shows a non-`emulator-*` device in state `device`, also run **`npm run android:devloop`** — Metro must be on **port 8081** (or run `npm run device:prep` after `npm run start`).
+2. If the task involves **on-device USB verification** and `adb devices` shows a non-`emulator-*` device in state `device`, also run **`npm run android:devloop`** (Metro on **8081** via `npm run start` + `device:prep`) **or** **`npm run start:8082`** then **`npm run android:phone:8082`** when using Metro on **8082**.
 
 Do not report the task complete while validation fails; fix or narrow scope first.
