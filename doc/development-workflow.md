@@ -41,6 +41,8 @@ CI runs `npm run version:verify` so Gradle and Xcode settings cannot drift from 
 
 Alternatively, use `npm version patch` (creates a commit and tag by default), then run `npm run version:sync` and amend or add a follow-up commit that includes the native files, then `git push --follow-tags`.
 
+**APK on GitHub:** Pushing a `v*` tag runs [`.github/workflows/github-release.yml`](../.github/workflows/github-release.yml), which uploads **`gcs-android-debug.apk`** to the **GitHub Release** for that tag (not to the bare tag page). On a tag’s URL, GitHub always lists **Source code (zip)** and **Source code (tar.gz)**—that is normal and is not the CI-built APK. Open **Releases**, pick the release for your tag, and download **`gcs-android-debug.apk`** under **Assets**. The workflow file at the **tagged commit** is what runs; merge release/CI fixes to the branch you tag before cutting the tag.
+
 ## GitHub (PRs and issues)
 
 - Use issue templates under `.github/ISSUE_TEMPLATE/` for bugs, features, and **problem / risk** items (workaround + proposed fix).
