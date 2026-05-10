@@ -42,18 +42,30 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Stage APK for release asset
+      - name: Locate and stage APK for release
+        id: apk
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk \
-            "GCS-${{ github.ref_name }}-android-debug.apk"
-          ls -la "GCS-${{ github.ref_name }}-android-debug.apk"
+          set -euxo pipefail
+          APK="$(find android/app/build/outputs/apk -name '*.apk' -type f | head -n 1)"
+          if [[ -z "${APK}" || ! -f "${APK}" ]]; then
+            echo "::error::No APK found under android/app/build/outputs/apk — assembleDebug may have failed silently."
+            find android/app/build/outputs -type f -name '*.apk' 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p release
+          # Simple filename avoids glob edge cases in action-gh-release `files` matching.
+          OUT="release/gcs-android-debug.apk"
+          cp -v "${APK}" "${OUT}"
+          ls -la "${OUT}"
+          echo "path=${OUT}" >> "${GITHUB_OUTPUT}"
 
       - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: GCS ${{ github.ref_name }}
-          files: GCS-${{ github.ref_name }}-android-debug.apk
+          files: ${{ steps.apk.outputs.path }}
+          fail_on_unmatched_files: true
           body: |
             ## GCS — UAV Ground Control (mobile)
 
@@ -63,7 +75,7 @@ jobs:
 
             | Asset | Description |
             |-------|-------------|
-            | **[GCS-${{ github.ref_name }}-android-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GCS-${{ github.ref_name }}-android-debug.apk)** | Android **debug** APK built by CI from this tag (install via `adb install` or sideload). |
+            | **[gcs-android-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/gcs-android-debug.apk)** | Android **debug** APK built by CI from this tag (install via `adb install` or sideload). |
 
             > For a signed **release** / Play-ready build, use your keystore and `./gradlew assembleRelease` locally or extend this workflow with signing secrets.
 
