@@ -21,12 +21,46 @@ import {type TelemetryFrame} from '../../core/types/telemetry';
 export type FrameHandler = (frame: TelemetryFrame) => void;
 export type Unsubscribe = () => void;
 
+/** Drop frames missing finite geometry/HUD-critical scalars so consumers never throw on .toFixed() etc. */
+function isPublishableTelemetryFrame(frame: TelemetryFrame): boolean {
+  try {
+    const p = frame.position;
+    if (!p) {
+      return false;
+    }
+    if (
+      !Number.isFinite(p.lat) ||
+      !Number.isFinite(p.lon) ||
+      !Number.isFinite(p.altRel)
+    ) {
+      return false;
+    }
+    if (
+      !Number.isFinite(frame.headingDeg) ||
+      !Number.isFinite(frame.groundSpeed) ||
+      !Number.isFinite(frame.climbSpeed)
+    ) {
+      return false;
+    }
+    if (!Number.isFinite(frame.battery?.soc)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 class TelemetryBusImpl {
   private readonly handlers = new Set<FrameHandler>();
   private last: TelemetryFrame | undefined;
   private publishCount = 0;
 
   publish(frame: TelemetryFrame): void {
+    if (!isPublishableTelemetryFrame(frame)) {
+      log.telemetry.warn('publish skipped: invalid or non-finite frame fields');
+      return;
+    }
     this.last = frame;
     this.publishCount++;
     if (this.handlers.size === 0) {
@@ -45,7 +79,7 @@ class TelemetryBusImpl {
 
   subscribe(handler: FrameHandler): Unsubscribe {
     this.handlers.add(handler);
-    if (this.last) {
+    if (this.last && isPublishableTelemetryFrame(this.last)) {
       try {
         handler(this.last);
       } catch (err) {

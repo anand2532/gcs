@@ -25,6 +25,13 @@
 - Holds the active `TelemetrySource` (today: simulation engine).
 - **`attach`** replaces source; **`startActive`** starts publishing.
 
+### Simulation engine (`src/modules/simulation/SimulationEngine.ts`)
+
+- Publishes `TelemetryFrame`s on the **same** `telemetryBus` as live sources (`TelemetrySourceKind.Simulation`).
+- Tick loop uses `setInterval` (not `requestAnimationFrame`) so timing stays deterministic vs UI pauses.
+- **Synthetic link modeling** (`shouldDropCurrentFrame`, latency `setTimeout`s, optional `setForceLinkOutage`) can suppress individual publishes — but **mission completion is authoritative**: on the tick where `MissionRunner` reaches `MissionPhase.Complete`, the engine **must not** treat a synthetic drop as “skip this tick entirely.” Otherwise `SimRunState` can remain `Running` while the runner is already `Complete`, leaving the interval armed (stuck sim / resource churn). The implementation skips the drop gate only when `runner.isComplete() && state === Running` (terminal transition).
+- Regression coverage: `__tests__/simulationMissionCompletion.test.ts` (includes **full frame loss** via `setForceLinkOutage(true)`).
+
 ## HUD path (`src/ui/HUD/HudBar.tsx`)
 
 - Subscribes via `useTelemetryStore.subscribe` with **equality** on `frame` reference + `armed`, combined with **`trailingThrottle`** to cap redraw rate (`HUD_REDRAW_HZ`).

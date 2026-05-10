@@ -7,12 +7,23 @@ import {
   View,
 } from 'react-native';
 
+import {useNavigation} from '@react-navigation/native';
+
+
 import {useOrgStore} from '../../../modules/organization';
 import {GlassPanel} from '../../../ui/components/GlassPanel';
 import {useTheme} from '../../../ui/theme/ThemeProvider';
+import {useCommandCenterStore} from '../state/commandCenterStore';
+
+import type {RootStackParamList} from '../../../app/navigation/types';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+
+type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
 export function OrganizationPanel(): React.JSX.Element {
   const theme = useTheme();
+  const navigation = useNavigation<RootNav>();
+  const setCommandOpen = useCommandCenterStore(s => s.setOpen);
   const organizations = useOrgStore(s => s.organizations);
   const activeOrgId = useOrgStore(s => s.activeOrgId);
   const capabilities = useOrgStore(s => s.capabilities);
@@ -25,6 +36,13 @@ export function OrganizationPanel(): React.JSX.Element {
     [setActiveOrg],
   );
 
+  const openWorkspace = useCallback(() => {
+    setCommandOpen(false);
+    navigation.navigate('Organization', {
+      screen: 'OrganizationWorkspace',
+    });
+  }, [navigation, setCommandOpen]);
+
   return (
     <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
       <Text style={[styles.title, {color: theme.palette.fg100}]}>
@@ -34,6 +52,17 @@ export function OrganizationPanel(): React.JSX.Element {
         Active tenant drives cached policies (geofence sync when API is
         configured). Switching triggers a policy refresh.
       </Text>
+
+      <GlassPanel elevated style={styles.workspaceLaunch}>
+        <Pressable accessibilityRole="button" onPress={openWorkspace}>
+          <Text style={[styles.workspaceLaunchTitle, {color: theme.palette.accentCyan}]}>
+            Open operations workspace
+          </Text>
+          <Text style={[styles.workspaceLaunchHint, {color: theme.palette.fg400}]}>
+            Fleet command dashboard · full-screen HQ surface
+          </Text>
+        </Pressable>
+      </GlassPanel>
 
       {organizations.map(org => {
         const selected = org.id === activeOrgId;
@@ -90,6 +119,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   sub: {fontSize: 12, marginBottom: 12},
+  workspaceLaunch: {
+    padding: 14,
+    marginBottom: 14,
+    borderRadius: 12,
+  },
+  workspaceLaunchTitle: {fontSize: 14, fontWeight: '800'},
+  workspaceLaunchHint: {fontSize: 11, marginTop: 6},
   card: {
     padding: 12,
     marginBottom: 10,

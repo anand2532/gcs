@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 
 import {CircleLayer, FillLayer, LineLayer, ShapeSource} from '@maplibre/maplibre-react-native';
 
+import {MISSION_PLANNING_PATH_MAX_VERTICES} from '../../../core/constants/map';
 import {type GeoPoint} from '../../../core/types/geo';
 import {type PathPoint} from '../../../core/types/missionPlanning';
 import {useTheme} from '../../../ui/theme/ThemeProvider';
@@ -49,11 +50,15 @@ export function MissionPlanningOverlays({
     if (path.length < 2) {
       return null;
     }
+    const sampled =
+      path.length <= MISSION_PLANNING_PATH_MAX_VERTICES
+        ? path
+        : decimatePathPoints(path, MISSION_PLANNING_PATH_MAX_VERTICES);
     return {
       type: 'Feature' as const,
       geometry: {
         type: 'LineString' as const,
-        coordinates: path.map(p => [p.lon, p.lat]),
+        coordinates: sampled.map(p => [p.lon, p.lat]),
       },
       properties: {},
     };
@@ -84,7 +89,8 @@ export function MissionPlanningOverlays({
             circleColor: theme.palette.bg900,
             circleStrokeColor: theme.palette.accentAmber,
             circleStrokeWidth: 2,
-            circleRadius: ['case', ['==', ['get', 'selected'], 1], 7, 5],
+            // Avoid circleRadius expressions on Fabric (Android MLRNStyleValue / ReadableArray typing).
+            circleRadius: 6,
           }}
         />
       </ShapeSource>
@@ -102,5 +108,32 @@ export function MissionPlanningOverlays({
       ) : null}
     </>
   );
+}
+
+/** Uniform stride sample — preserves endpoints for map stability under huge survey paths. */
+function decimatePathPoints(
+  path: readonly PathPoint[],
+  maxPoints: number,
+): PathPoint[] {
+  if (path.length <= maxPoints) {
+    return [...path];
+  }
+  const out: PathPoint[] = [];
+  const span = path.length - 1;
+  const steps = maxPoints - 1;
+  for (let i = 0; i < steps; i++) {
+    const idx = Math.min(path.length - 1, Math.round((i / steps) * span));
+    out.push(path[idx]!);
+  }
+  const last = path[path.length - 1]!;
+  const oLast = out[out.length - 1];
+  if (
+    !oLast ||
+    oLast.lat !== last.lat ||
+    oLast.lon !== last.lon
+  ) {
+    out.push(last);
+  }
+  return out;
 }
 

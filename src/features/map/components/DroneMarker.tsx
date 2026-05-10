@@ -37,6 +37,7 @@ import Animated, {
 import Svg, {Circle, Line, Path} from 'react-native-svg';
 
 import {DRONE_MARKER_POSITION_MAX_HZ} from '../../../core/constants/map';
+import {isFiniteLngLat} from '../../../core/utils/geo';
 import {unwrapHeadingRadians} from '../../../core/utils/heading';
 import {trailingThrottle} from '../../../core/utils/throttle';
 import {telemetryBus} from '../../../modules/telemetry';
@@ -63,9 +64,13 @@ export function DroneMarker({
   onArmToggle,
 }: DroneMarkerProps): React.JSX.Element | null {
   const theme = useTheme();
-  const [coord, setCoord] = useState<[number, number] | null>(
-    initialCoordinate ?? null,
-  );
+  const [coord, setCoord] = useState<[number, number] | null>(() => {
+    if (!initialCoordinate) {
+      return null;
+    }
+    const [lon, lat] = initialCoordinate;
+    return isFiniteLngLat(lon, lat) ? [lon, lat] : null;
+  });
   const headingRad = useSharedValue(0);
   const pulse = useSharedValue(0);
 
@@ -96,7 +101,9 @@ export function DroneMarker({
     }, MARKER_POSITION_INTERVAL_MS),
   ).current;
 
-  useEffect(() => () => markerThrottle.flush(), [markerThrottle]);
+  // Cancel trailing marker updates on unmount — flush() can still push coordinates
+  // into MarkerView while native teardown is in progress.
+  useEffect(() => () => markerThrottle.cancel(), [markerThrottle]);
 
   useEffect(() => {
     pulse.value = withRepeat(
@@ -124,7 +131,7 @@ export function DroneMarker({
     transform: [{scale: 0.92 + pulse.value * 0.18}],
   }));
 
-  if (!coord) {
+  if (!coord || !isFiniteLngLat(coord[0], coord[1])) {
     return null;
   }
 

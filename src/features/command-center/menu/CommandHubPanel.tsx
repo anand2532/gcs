@@ -34,11 +34,6 @@ const CARDS: HubCard[] = [
     subtitle: 'Login, roles, profile, session control',
   },
   {
-    id: 'organization',
-    title: 'Organization',
-    subtitle: 'Fleet, members, zones, switching',
-  },
-  {
     id: 'missions',
     title: 'Mission Operations',
     subtitle: 'Plans, simulation, replay, offline sorties',
@@ -67,6 +62,13 @@ export function CommandHubPanel(): React.JSX.Element {
   const openTelemetryTerminal = useCallback(() => {
     setOpen(false);
     navigation.navigate('TelemetryTerminal');
+  }, [navigation, setOpen]);
+
+  const openOrganizationWorkspace = useCallback(() => {
+    setOpen(false);
+    navigation.navigate('Organization', {
+      screen: 'OrganizationWorkspace',
+    });
   }, [navigation, setOpen]);
 
   const scrollMax = Math.min(winH * 0.52, 500);
@@ -101,10 +103,25 @@ export function CommandHubPanel(): React.JSX.Element {
             </GlassPanel>
           </Pressable>
         </Animated.View>
+        <Animated.View entering={FadeInDown.duration(320).delay(45)}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={openOrganizationWorkspace}
+            style={({pressed}) => [{opacity: pressed ? 0.85 : 1}]}>
+            <GlassPanel elevated style={styles.card}>
+              <Text style={[styles.cardTitle, {color: theme.palette.fg100}]}>
+                Organization workspace
+              </Text>
+              <Text style={[styles.cardSub, {color: theme.palette.fg300}]}>
+                Fleet HQ · operations · analytics · UAV command surfaces
+              </Text>
+            </GlassPanel>
+          </Pressable>
+        </Animated.View>
         {CARDS.map((c, index) => (
           <Animated.View
             key={c.id}
-            entering={FadeInDown.duration(320).delay(45 * (index + 1))}>
+            entering={FadeInDown.duration(320).delay(45 * (index + 2))}>
             <Pressable
               accessibilityRole="button"
               onPress={() => openPanel(c.id)}

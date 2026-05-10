@@ -6,6 +6,7 @@ import {type RootStackParamList} from './types';
 import {REQUIRE_AUTH_GATE} from '../../core/constants/backend';
 import {BootstrapScreen} from '../../features/bootstrap/BootstrapScreen';
 import {MapHomeScreen} from '../../features/map/screens/MapHomeScreen';
+import {OrganizationNavigator} from '../../features/organization/navigation/OrganizationNavigator';
 import {TelemetryTerminalScreen} from '../../features/telemetry-terminal/screens/TelemetryTerminalScreen';
 
 
@@ -36,6 +37,14 @@ export function RootNavigator(): React.JSX.Element {
         options={{
           animation: 'slide_from_bottom',
           presentation: 'fullScreenModal',
+        }}
+      />
+      <Stack.Screen
+        name="Organization"
+        component={OrganizationNavigator}
+        options={{
+          animation: 'fade',
+          freezeOnBlur: true,
         }}
       />
     </Stack.Navigator>

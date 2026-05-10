@@ -17,10 +17,10 @@
  *                                        shifts green <-> red by state)
  *
  * Lifecycle:
- *   - onMount: bind bus -> store, init OfflineManager, start watchdog.
+ *   - onMount: subscribe sim → UI state, schedule OfflineManager init, start watchdog.
  *   - simulation does NOT auto-start; the user taps the green Start FAB.
- *   - on unmount: stop watchdog and sim (defensive — Phase 1 has only one
- *     screen but later phases may swap it out).
+ *   - on unmount: unsubscribe sim; watchdog/sim keep running (Android activity quirks).
+ *   - telemetry source (sim vs MAVLink) is a separate effect keyed by link profile fields.
  */
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -34,8 +34,8 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
-import {Camera, type MapViewRef} from '@maplibre/maplibre-react-native';
-import {useIsFocused} from '@react-navigation/native';
+import {type MapViewRef} from '@maplibre/maplibre-react-native';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {setMavlinkTapListener} from '../../../communication/debug/mavlinkTapBridge';
@@ -50,6 +50,10 @@ import {
   useOperationalBasemap,
 } from '../../../modules/geospatial';
 import {OfflineMapManager} from '../../../modules/offline';
+import {
+  ensureFleetTelemetryFanOutAttached,
+  useWorkspaceSessionStore,
+} from '../../../modules/organization';
 import {
   LinkProfileStore,
   MapVariantStore,
@@ -85,20 +89,22 @@ import {
   OfflineControls,
   SimControls,
 } from '../components/MapControls';
-import {MapView, type MapCameraIdleEvent} from '../components/MapView';
+import {type MapCameraIdleEvent} from '../components/MapView';
 import {OfflineProgressOverlay} from '../components/OfflineProgressOverlay';
 import {useMapCamera} from '../hooks/useMapCamera';
 import {useOfflineDownload} from '../hooks/useOfflineDownload';
+import {TacticalMapSurface} from '../surfaces/TacticalMapSurface';
 
 bindBusToStore();
 bindGeofenceTelemetryEvaluation();
+ensureFleetTelemetryFanOutAttached();
 
 export function MapHomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const {width: screenWidth} = useWindowDimensions();
   const isMapFocused = useIsFocused();
-  const camera = useMapCamera();
+  const camera = useMapCamera({surfaceActive: isMapFocused});
 
   const mapViewRef = useRef<MapViewRef | null>(null);
   const offline = useOfflineDownload({mapViewRef});
@@ -125,8 +131,35 @@ export function MapHomeScreen(): React.JSX.Element {
   );
 
   useEffect(() => {
+    if (!isMapFocused) {
+      return;
+    }
     globalOverlayRegistry.scheduleFlush(40);
-  }, [basemap.effectiveVariant, basemap.styleURL]);
+  }, [isMapFocused, basemap.effectiveVariant, basemap.styleURL]);
+
+  useFocusEffect(
+    useCallback(() => {
+      useWorkspaceSessionStore.getState().setMode('tactical_map');
+      const session = useWorkspaceSessionStore.getState();
+      if (session.simPausedForNavigation) {
+        const p = LinkProfileStore.load().profile;
+        if (p === 'simulation') {
+          simulationEngine.resume();
+        }
+        useWorkspaceSessionStore.getState().setSimPausedForNavigation(false);
+      }
+      return () => {
+        const p = LinkProfileStore.load().profile;
+        if (
+          p === 'simulation' &&
+          simulationEngine.getState().run === SimRunState.Running
+        ) {
+          simulationEngine.pause();
+          useWorkspaceSessionStore.getState().setSimPausedForNavigation(true);
+        }
+      };
+    }, []),
+  );
 
   const handleCameraIdleCombined = useCallback(
     (e: MapCameraIdleEvent) => {
@@ -161,16 +194,11 @@ export function MapHomeScreen(): React.JSX.Element {
   const PLANNER_GAP = 12;
   const PLANNER_MIN_HEIGHT = 56;
 
+  // Screen lifecycle only — do not key this on `linkProfile` or cleanup fires on
+  // every profile change and misleadingly logs "unmounted" while the UI stays visible.
   useEffect(() => {
-    if (linkProfile.profile === 'mavlink_udp') {
-      mavlinkTelemetrySource.configure({bindPort: linkProfile.udpBindPort});
-      telemetrySourceRegistry.attach(mavlinkTelemetrySource);
-    } else {
-      telemetrySourceRegistry.attach(simulationEngine);
-    }
     telemetryWatchdog.start();
     const unsub = simulationEngine.subscribe(setSimState);
-    log.app.info('MapHomeScreen mounted');
 
     // Defer MapLibre OfflineManager bootstrap to the next frame so the
     // first render (map view, HUD, FABs) hits the screen before native
@@ -186,9 +214,17 @@ export function MapHomeScreen(): React.JSX.Element {
       // Do not hard-stop sim/watchdog on transient activity recreation or
       // foreground interruptions (common on some OEM Android builds). This
       // keeps mission state stable when the app is briefly backgrounded.
-      log.app.info('MapHomeScreen unmounted');
     };
-  }, [linkProfile]);
+  }, []);
+
+  useEffect(() => {
+    if (linkProfile.profile === 'mavlink_udp') {
+      mavlinkTelemetrySource.configure({bindPort: linkProfile.udpBindPort});
+      telemetrySourceRegistry.attach(mavlinkTelemetrySource);
+    } else {
+      telemetrySourceRegistry.attach(simulationEngine);
+    }
+  }, [linkProfile.profile, linkProfile.udpBindPort]);
 
   useEffect(() => {
     setMavlinkTapListener(ev => {
@@ -373,41 +409,43 @@ export function MapHomeScreen(): React.JSX.Element {
         translucent
       />
       <View style={StyleSheet.absoluteFill}>
-        <MapView
-          ref={mapViewRef}
-          variant={basemap.effectiveVariant}
-          mapStyle={basemap.styleURL}
-          onMapPress={handleMapPress}
-          onMapLongPress={handleMapLongPress}
-          onCameraIdle={handleCameraIdleCombined}
-          onUserPan={camera.handleUserPan}>
-          <Camera
-            ref={camera.cameraRef}
-            defaultSettings={{
-              centerCoordinate: initial.centerCoordinate,
+        {isMapFocused ? (
+          <TacticalMapSurface
+            mapViewRef={mapViewRef}
+            cameraRef={camera.cameraRef}
+            variant={basemap.effectiveVariant}
+            mapStyle={basemap.styleURL}
+            initialCamera={{
+              centerCoordinate: initial.centerCoordinate as [number, number],
               zoomLevel: initial.zoomLevel,
               pitch: initial.pitch,
               heading: initial.heading,
             }}
-          />
-          <FlightTrail />
-          <AirspaceOverlay />
-          {isMapFocused ? (
+            onMapPress={handleMapPress}
+            onMapLongPress={handleMapLongPress}
+            onCameraIdle={handleCameraIdleCombined}
+            onUserPan={camera.handleUserPan}>
+            <FlightTrail />
+            <AirspaceOverlay />
             <MissionPlanningOverlays
               polygon={planning.state.editor.points}
               path={planning.generatedPath}
               selectedIndex={planning.state.editor.selectedIndex}
             />
-          ) : null}
-          <DroneMarker
-            initialCoordinate={[
-              camera.initialCamera.center.lon,
-              camera.initialCamera.center.lat,
-            ]}
-            armed={armed}
-            onArmToggle={handleArmToggle}
+            <DroneMarker
+              initialCoordinate={[
+                camera.initialCamera.center.lon,
+                camera.initialCamera.center.lat,
+              ]}
+              armed={armed}
+              onArmToggle={handleArmToggle}
+            />
+          </TacticalMapSurface>
+        ) : (
+          <View
+            style={[StyleSheet.absoluteFill, {backgroundColor: theme.palette.bg900}]}
           />
-        </MapView>
+        )}
       </View>
 
       <CommandCenterRoot />

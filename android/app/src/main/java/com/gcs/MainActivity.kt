@@ -6,6 +6,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.ReactApplication
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
@@ -30,13 +31,15 @@ class MainActivity : ReactActivity() {
   }
 
   override fun onWindowFocusChanged(hasFocus: Boolean) {
-    // Post one frame so React Native's delegate sees focus after bridge/context
-    // is ready (avoids ReactNoCrashSoftException during reload / immersive churn).
-    window.decorView.post {
-      super@MainActivity.onWindowFocusChanged(hasFocus)
-      if (hasFocus) {
-        enableImmersiveMode()
-      }
+    val host = (application as ReactApplication).reactHost
+    // Bridgeless: first focus event often arrives before ReactContext exists. Forwarding then
+    // always logs ReactNoCrashSoftException; lifecycle + onResume still drive the host. Once the
+    // context exists, forward focus normally.
+    if (host?.currentReactContext != null) {
+      super.onWindowFocusChanged(hasFocus)
+    }
+    if (hasFocus) {
+      window.decorView.post { enableImmersiveMode() }
     }
   }
 
