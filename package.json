@@ -18,6 +18,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "validate": "npm run lint && npm run typecheck && npm run test -- --runInBand",
+    "validate:native": "npm run version:verify && cd android && ./gradlew assembleDebug --no-daemon",
+    "validate:all": "npm run validate && npm run validate:native",
     "version:sync": "node scripts/sync-native-version.mjs",
     "version:verify": "node scripts/verify-native-version.mjs",
     "release:patch": "npm version patch --no-git-tag-version && npm run version:sync",
