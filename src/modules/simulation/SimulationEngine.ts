@@ -402,6 +402,14 @@ class SimulationEngineImpl implements TelemetrySource {
       }, latencyMs);
       this.pendingFrameTimers.add(timer);
     }
+
+    if (this.runner.isComplete() && this.state !== SimRunState.Completed) {
+      this.state = SimRunState.Completed;
+      this.clearInterval();
+      log.sim.info('complete');
+      useTelemetryStore.getState().setArmed(false);
+      this.notify();
+    }
   }
 
   private notify(): void {

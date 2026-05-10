@@ -112,13 +112,9 @@ export function CompassWidget({
   const cardinalRadius = ring - 10;
 
   const needleProps = useAnimatedProps(
-    () => {
-      const deg = headingDegAnimated.value;
-      const safe = Number.isFinite(deg) ? deg % 360 : 0;
-      return {
-        transform: `rotate(${safe} ${cx} ${cx})`,
-      };
-    },
+    () => ({
+      transform: `rotate(${headingDegAnimated.value} ${cx} ${cx})`,
+    }),
     [cx],
   );
 

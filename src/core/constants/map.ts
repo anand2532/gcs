@@ -90,13 +90,6 @@ export const FLIGHT_TRAIL_REDRAW_MAX_HZ = 12;
  */
 export const DRONE_MARKER_POSITION_MAX_HZ = 15;
 
-/**
- * Mission-planning survey preview path — MapLibre LineStrings with tens of thousands
- * of vertices routinely crash or freeze native map surfaces on mid-tier phones.
- * Display-only cap; {@link SURVEY_MAX_PATH_POINTS} still governs generation.
- */
-export const MISSION_PLANNING_PATH_MAX_VERTICES = 2500;
-
 export const SATELLITE_STYLE: MapLibreStyle = {
   version: 8,
   name: 'GCS Satellite',
