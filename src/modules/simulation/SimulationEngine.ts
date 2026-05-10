@@ -40,6 +40,7 @@ import {
   TelemetrySourceKind,
 } from '../../core/types/telemetry';
 import {now} from '../../core/utils/time';
+import {PRIMARY_TELEMETRY_VEHICLE_ID} from '../organization/fleetConstants';
 import {SimConfigStore} from '../persistence/schemas';
 import {telemetryBus} from '../telemetry/TelemetryBus';
 import {useTelemetryStore} from '../telemetry/TelemetryStore';
@@ -137,6 +138,7 @@ class SimulationEngineImpl implements TelemetrySource {
     this.state = SimRunState.Running;
     this.lastTickAt = now();
     const intervalMs = Math.max(16, Math.round(1000 / this.tickHz));
+    this.clearInterval();
     this.interval = setInterval(() => {
       this.tick();
     }, intervalMs);
@@ -150,6 +152,7 @@ class SimulationEngineImpl implements TelemetrySource {
     }
     this.state = SimRunState.Paused;
     this.clearInterval();
+    this.clearPendingFrameTimers();
     log.sim.info('pause');
     this.notify();
   }
@@ -161,6 +164,7 @@ class SimulationEngineImpl implements TelemetrySource {
     this.state = SimRunState.Running;
     this.lastTickAt = now();
     const intervalMs = Math.max(16, Math.round(1000 / this.tickHz));
+    this.clearInterval();
     this.interval = setInterval(() => {
       this.tick();
     }, intervalMs);
@@ -311,7 +315,14 @@ class SimulationEngineImpl implements TelemetrySource {
     this.runner.step(dt);
     const snap = this.flight.snapshot();
     this.updateLinkModel(dt);
-    if (this.shouldDropCurrentFrame()) {
+    // Synthetic drops must not suppress the terminal tick: `MissionRunner` can move to
+    // `Complete` on this same `step()`, but `shouldDropCurrentFrame()` would return early
+    // and skip the completion block — leaving `SimRunState.Running` with the interval
+    // still armed (infinite no-op ticks). Burst RF loss at the landing waypoint was the
+    // real failure mode; completion is authoritative, not subject to link modeling.
+    const completingRun =
+      this.runner.isComplete() && this.state === SimRunState.Running;
+    if (!completingRun && this.shouldDropCurrentFrame()) {
       return;
     }
     this.updateGpsModel(dt);
@@ -320,9 +331,19 @@ class SimulationEngineImpl implements TelemetrySource {
     const latencyMs = this.simulatedLatencyMs();
 
     const publishFrame = (): void => {
+      if (this.state !== SimRunState.Running) {
+        return;
+      }
+      if (
+        !Number.isFinite(snap.position.lat) ||
+        !Number.isFinite(snap.position.lon)
+      ) {
+        return;
+      }
       const publishAt = now();
       const frame: TelemetryFrame = {
         t: publishAt,
+        vehicleId: PRIMARY_TELEMETRY_VEHICLE_ID,
         source: TelemetrySourceKind.Simulation,
         position: snap.position,
         velocity: snap.velocity,
@@ -352,6 +373,19 @@ class SimulationEngineImpl implements TelemetrySource {
       };
       telemetryBus.publish(frame);
     };
+
+    // Finish mission on this tick before scheduling latency for the same tick — otherwise we
+    // schedule a timer then clearPendingFrameTimers() in complete cleanup and drop the final frame.
+    if (this.runner.isComplete() && this.state === SimRunState.Running) {
+      publishFrame();
+      this.state = SimRunState.Completed;
+      this.clearInterval();
+      this.clearPendingFrameTimers();
+      log.sim.info('complete');
+      useTelemetryStore.getState().setArmed(false);
+      this.notify();
+      return;
+    }
 
     if (latencyMs <= 0) {
       publishFrame();

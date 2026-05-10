@@ -93,6 +93,16 @@ export function angleDeltaDeg(from: number, to: number): number {
   return delta;
 }
 
+/** True when both values are finite numbers suitable for MapLibre / GeoJSON (MarkerView, Camera). */
+export function isFiniteLngLat(lon: unknown, lat: unknown): boolean {
+  return (
+    typeof lon === 'number' &&
+    typeof lat === 'number' &&
+    Number.isFinite(lon) &&
+    Number.isFinite(lat)
+  );
+}
+
 /** Clamp value to [min, max]. */
 export function clamp(value: number, min: number, max: number): number {
   if (value < min) {

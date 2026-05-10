@@ -56,19 +56,26 @@ const EMPTY_SNAPSHOT: HudSnapshot = {
   armed: false,
 };
 
+function finiteOr(defaultVal: number, n: unknown): number {
+  return typeof n === 'number' && Number.isFinite(n) ? n : defaultVal;
+}
+
 function frameToSnapshot(
   frame: TelemetryFrame | undefined,
   armed: boolean,
 ): HudSnapshot {
-  if (!frame) {
+  if (!frame?.position || !frame.battery || !frame.gps || !frame.system) {
     return {...EMPTY_SNAPSHOT, armed};
   }
   return {
-    altRel: frame.position.altRel,
-    groundSpeed: frame.groundSpeed,
-    headingDeg: frame.headingDeg,
-    batterySoc: frame.battery.soc,
-    satellites: frame.gps.satellites,
+    altRel: finiteOr(0, frame.position.altRel),
+    groundSpeed: finiteOr(0, frame.groundSpeed),
+    headingDeg: finiteOr(0, frame.headingDeg),
+    batterySoc: finiteOr(1, frame.battery.soc),
+    satellites: Math.max(
+      0,
+      Math.round(finiteOr(0, frame.gps.satellites)),
+    ),
     fix: frame.gps.fix,
     mode: frame.system.mode,
     armed,

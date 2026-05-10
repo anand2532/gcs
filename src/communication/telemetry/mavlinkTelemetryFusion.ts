@@ -6,6 +6,7 @@ import {
   TelemetrySourceKind,
   type TelemetryMissionSnapshot,
 } from '../../core/types/telemetry';
+import {PRIMARY_TELEMETRY_VEHICLE_ID} from '../../modules/organization/fleetConstants';
 import {
   MAV_MODE_FLAG_SAFETY_ARMED,
   type DecodedMavlinkPayload,
@@ -175,6 +176,7 @@ export class MavlinkTelemetryFusion {
 
     return {
       t: nowMs,
+      vehicleId: PRIMARY_TELEMETRY_VEHICLE_ID,
       source: TelemetrySourceKind.Mavlink,
       position: {
         lat: this.lat,

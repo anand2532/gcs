@@ -57,7 +57,7 @@ export function FlightTrail(): React.JSX.Element | null {
     }, TRAIL_REDRAW_INTERVAL_MS),
   ).current;
 
-  useEffect(() => () => redrawThrottle.flush(), [redrawThrottle]);
+  useEffect(() => () => redrawThrottle.cancel(), [redrawThrottle]);
 
   useEffect(() => {
     return telemetryBus.subscribe(frame => {

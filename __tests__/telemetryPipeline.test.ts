@@ -61,6 +61,20 @@ describe('telemetry pipeline', () => {
     expect(seen[0]!.headingDeg).toBe(42);
   });
 
+  it('drops frames with non-finite HUD-critical fields', () => {
+    const seen: TelemetryFrame[] = [];
+    const unsub = telemetryBus.subscribe(f => {
+      seen.push(f);
+    });
+    telemetryBus.publish(
+      makeFrame({
+        headingDeg: Number.NaN as unknown as number,
+      }),
+    );
+    unsub();
+    expect(seen).toHaveLength(0);
+  });
+
   it('hydrates late subscribers with the most recent frame', () => {
     telemetryBus.publish(makeFrame({headingDeg: 90}));
     const seen: TelemetryFrame[] = [];

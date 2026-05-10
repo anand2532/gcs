@@ -63,9 +63,13 @@ export function DroneMarker({
   onArmToggle,
 }: DroneMarkerProps): React.JSX.Element | null {
   const theme = useTheme();
-  const [coord, setCoord] = useState<[number, number] | null>(
-    initialCoordinate ?? null,
-  );
+  const [coord, setCoord] = useState<[number, number] | null>(() => {
+    if (!initialCoordinate) {
+      return null;
+    }
+    const [lon, lat] = initialCoordinate;
+    return isFiniteLngLat(lon, lat) ? [lon, lat] : null;
+  });
   const headingRad = useSharedValue(0);
   const pulse = useSharedValue(0);
 
@@ -124,7 +128,7 @@ export function DroneMarker({
     transform: [{scale: 0.92 + pulse.value * 0.18}],
   }));
 
-  if (!coord) {
+  if (!coord || !isFiniteLngLat(coord[0], coord[1])) {
     return null;
   }
 

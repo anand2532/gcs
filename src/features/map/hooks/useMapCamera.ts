@@ -36,6 +36,7 @@ import {
 import {log} from '../../../core/logger/Logger';
 import {type MapCameraState} from '../../../core/types/geo';
 import {ConnectionState, type TelemetryFrame} from '../../../core/types/telemetry';
+import {isFiniteLngLat} from '../../../core/utils/geo';
 import {trailingThrottle} from '../../../core/utils/throttle';
 import {
   MapCameraStore,
@@ -55,6 +56,14 @@ const FOLLOW_CAMERA_INTERVAL_MS = Math.max(
   Math.ceil(1000 / FOLLOW_CAMERA_MAX_HZ),
 );
 
+export interface UseMapCameraOptions {
+  /**
+   * When false, the follow-camera loop does not subscribe to the bus (map surface
+   * unmounted or inactive — saves work while navigation persists this hook).
+   */
+  readonly surfaceActive?: boolean;
+}
+
 export interface UseMapCamera {
   readonly cameraRef: React.RefObject<CameraRef>;
   readonly initialCamera: MapCameraState;
@@ -69,7 +78,8 @@ export interface UseMapCamera {
   handleUserPan(): void;
 }
 
-export function useMapCamera(): UseMapCamera {
+export function useMapCamera(opts: UseMapCameraOptions = {}): UseMapCamera {
+  const surfaceActive = opts.surfaceActive !== false;
   const cameraRef = useRef<CameraRef>(null);
   const [followDrone, setFollowDroneState] = useState<boolean>(() =>
     MapFollowStore.load(),
@@ -81,11 +91,20 @@ export function useMapCamera(): UseMapCamera {
     persisted.current = MapCameraStore.load();
   }
 
-  const initialCamera: MapCameraState = persisted.current ?? {
+  const rawInitial: MapCameraState = persisted.current ?? {
     center: MAP_DEFAULTS.initialCenter,
     zoom: MAP_DEFAULTS.initialZoom,
     bearing: 0,
     pitch: MAP_DEFAULTS.followPitch,
+  };
+
+  const initialCamera: MapCameraState = {
+    center: isFiniteLngLat(rawInitial.center.lon, rawInitial.center.lat)
+      ? rawInitial.center
+      : MAP_DEFAULTS.initialCenter,
+    zoom: Number.isFinite(rawInitial.zoom) ? rawInitial.zoom : MAP_DEFAULTS.initialZoom,
+    bearing: Number.isFinite(rawInitial.bearing) ? rawInitial.bearing : 0,
+    pitch: Number.isFinite(rawInitial.pitch) ? rawInitial.pitch : MAP_DEFAULTS.followPitch,
   };
   // Track the seed zoom for relative zoomIn/zoomOut.
   if (lastZoom.current === MAP_DEFAULTS.followZoom) {
@@ -119,6 +138,9 @@ export function useMapCamera(): UseMapCamera {
       busLast?.position.lon ?? storeFrame?.position.lon ?? initialCamera.center.lon;
     const targetLat =
       busLast?.position.lat ?? storeFrame?.position.lat ?? initialCamera.center.lat;
+    if (!isFiniteLngLat(targetLon, targetLat)) {
+      return;
+    }
     cameraRef.current?.setCamera({
       centerCoordinate: [targetLon, targetLat],
       zoomLevel: Math.max(MAP_DEFAULTS.followZoom, lastZoom.current),
@@ -163,21 +185,32 @@ export function useMapCamera(): UseMapCamera {
         connection === ConnectionState.Lost
           ? FOLLOW_TICK_DURATION_DEGRADED_MS
           : FOLLOW_TICK_DURATION_MS;
+      const {lon, lat} = frame.position;
+      if (!isFiniteLngLat(lon, lat)) {
+        return;
+      }
       cameraRef.current?.setCamera({
-        centerCoordinate: [frame.position.lon, frame.position.lat],
+        centerCoordinate: [lon, lat],
         animationDuration: dur,
         animationMode: 'easeTo',
       });
     }, FOLLOW_CAMERA_INTERVAL_MS),
   ).current;
 
-  useEffect(() => () => followCameraThrottle.flush(), [followCameraThrottle]);
+  // Cancel trailing work on unmount — flushing would deliver one more setCamera()
+  // after the MapView/Camera may already be tearing down (native "unmounted" errors).
+  useEffect(() => () => followCameraThrottle.cancel(), [followCameraThrottle]);
 
   const handleCameraIdle = useCallback(
     (e: MapCameraIdleEvent) => {
       lastZoom.current = e.zoom;
+      const lon = e.center[0];
+      const lat = e.center[1];
+      if (!isFiniteLngLat(lon, lat)) {
+        return;
+      }
       const next: MapCameraState = {
-        center: {lat: e.center[1], lon: e.center[0]},
+        center: {lat, lon},
         zoom: e.zoom,
         bearing: e.bearing,
         pitch: e.pitch,
@@ -190,13 +223,13 @@ export function useMapCamera(): UseMapCamera {
   // Live follow loop — bus subscription stays cheap; `setCamera` is capped by
   // FOLLOW_CAMERA_MAX_HZ so high sim tick rates cannot overwhelm the bridge.
   useEffect(() => {
-    if (!followDrone) {
+    if (!surfaceActive || !followDrone) {
       return;
     }
     return telemetryBus.subscribe(frame => {
       followCameraThrottle.call(frame);
     });
-  }, [followDrone, followCameraThrottle]);
+  }, [surfaceActive, followDrone, followCameraThrottle]);
 
   return {
     cameraRef,

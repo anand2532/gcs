@@ -118,6 +118,8 @@ export interface LinkState {
 export interface TelemetryFrame {
   /** Monotonic-ish source timestamp, ms since epoch. */
   readonly t: number;
+  /** When set, associates this sample with a fleet vehicle / command target. */
+  readonly vehicleId?: string;
   readonly source: TelemetrySourceKind;
   readonly position: GeoPosition;
   readonly velocity: VelocityEnu;
