@@ -18,7 +18,8 @@ export const StorageKeys = {
   // would otherwise pin the camera over California on first launch.
   MapCamera: 'map.camera.v2',
   MapFollow: 'map.follow.v1',
-  MapVariant: 'map.variant.v1',
+  /** Key bumped when MAP_VARIANT_VERSION became 2 so legacy v1 blobs are not re-keyed every launch. */
+  MapVariant: 'map.variant.v2',
   SimConfig: 'sim.config.v1',
   MissionPlanningDraft: 'mission.planning.draft.v1',
   MissionPlanningUi: 'mission.planning.ui.v1',

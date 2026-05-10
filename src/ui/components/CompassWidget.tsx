@@ -26,6 +26,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedProps,
   useSharedValue,
@@ -34,8 +35,17 @@ import Animated, {
 // eslint-disable-next-line import/no-named-as-default
 import Svg, {Circle, G, Line, Path, Text as SvgText} from 'react-native-svg';
 
+import {unwrapHeadingRadians} from '../../core/utils/heading';
+import {trailingThrottle} from '../../core/utils/throttle';
 import {telemetryBus} from '../../modules/telemetry';
 import {useTheme} from '../theme/ThemeProvider';
+
+/** Match map marker / trail budget — compass must not run Reanimated at telemetry Hz. */
+const COMPASS_ANIM_MAX_HZ = 15;
+const COMPASS_ANIM_INTERVAL_MS = Math.max(
+  40,
+  Math.ceil(1000 / COMPASS_ANIM_MAX_HZ),
+);
 
 const AnimatedG = Animated.createAnimatedComponent(G);
 
@@ -61,32 +71,37 @@ export function CompassWidget({
   opacity = 0.78,
 }: CompassWidgetProps): React.JSX.Element {
   const theme = useTheme();
-  const headingDeg = useSharedValue(0);
-  const lastHeadingDeg = useRef(0);
+  /** Degrees for SVG `rotate()` — unwrapped each tick via radians then converted back. */
+  const headingDegAnimated = useSharedValue(0);
   const [headingText, setHeadingText] = useState('000');
 
-  useEffect(() => {
-    return telemetryBus.subscribe(frame => {
-      let nextDeg = frame.headingDeg;
-      const prevDeg = lastHeadingDeg.current;
-      let delta = nextDeg - prevDeg;
-      while (delta > 180) {
-        delta -= 360;
+  const compassThrottle = useRef(
+    trailingThrottle((headingDegMeasured: number) => {
+      if (!Number.isFinite(headingDegMeasured)) {
+        return;
       }
-      while (delta < -180) {
-        delta += 360;
-      }
-      nextDeg = prevDeg + delta;
-      lastHeadingDeg.current = nextDeg;
-      headingDeg.value = withTiming(nextDeg, {
+      cancelAnimation(headingDegAnimated);
+      const prevRad = (headingDegAnimated.value * Math.PI) / 180;
+      const targetRad = unwrapHeadingRadians(prevRad, headingDegMeasured);
+      headingDegAnimated.value = withTiming((targetRad * 180) / Math.PI, {
         duration: 220,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
 
-      const display = Math.round(((frame.headingDeg % 360) + 360) % 360);
+      const display = Math.round(
+        ((headingDegMeasured % 360) + 360) % 360,
+      );
       setHeadingText(String(display).padStart(3, '0'));
+    }, COMPASS_ANIM_INTERVAL_MS),
+  ).current;
+
+  useEffect(() => () => compassThrottle.flush(), [compassThrottle]);
+
+  useEffect(() => {
+    return telemetryBus.subscribe(frame => {
+      compassThrottle.call(frame.headingDeg);
     });
-  }, [headingDeg]);
+  }, [compassThrottle]);
 
   const cyan = theme.palette.accentCyan;
   const fgMuted = theme.palette.fg300;
@@ -98,7 +113,7 @@ export function CompassWidget({
 
   const needleProps = useAnimatedProps(
     () => ({
-      transform: `rotate(${headingDeg.value} ${cx} ${cx})`,
+      transform: `rotate(${headingDegAnimated.value} ${cx} ${cx})`,
     }),
     [cx],
   );

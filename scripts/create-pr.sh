@@ -65,16 +65,22 @@ if [[ -n "${EXISTING_URL}" ]]; then
   exit 0
 fi
 
-TITLE="feat: MAVLink communication layer and Android USB dev workflow"
-BODY='## Summary
-- MAVLink stack (parse/encode, UDP/TCP/USB transports, fusion, mission/commands, reconnect, heartbeat; MQTT/BLE stubs).
-- Map link profile toggle + persistence; Android MainActivity focus deferral; LogBox MapLibre noise.
-- USB dev: `npm run device:prep`, `android:phone` uses `--deviceId`.
-- Docs/tests: `doc/communication.md`, mavlink tests, jest mocks.
+TITLE="${PR_TITLE:-feat(sim): simulation and map pipeline stability}"
+DEFAULT_PR_BODY='## Summary
+- Simulation engine: single battery drain path; capped synthetic latency timer backlog (`SIM_MAX_PENDING_LATENCY_FRAMES`).
+- Map HUD: DroneMarker + CompassWidget throttled; `unwrapHeadingRadians` + `cancelAnimation`; MAVLink `stop` clears session/link state.
+- Android USB: `run-android-physical.sh` pins device via `ANDROID_SERIAL` only (reliable CLI targeting).
+- Persistence: MapVariant MMKV key aligned to `map.variant.v2`.
+- Tests/docs: heading unwrap + battery monotonic; simulation + telemetry docs.
+
+## Related issue
+<!-- Link: Fixes #NN after creating the GitHub issue -->
 
 ## Test plan
-- [ ] `npm run validate`
+- [x] `npm run validate`
+- [ ] Manual: Android USB — start sim, confirm marker moves without process exit
 '
+BODY="${PR_BODY:-$DEFAULT_PR_BODY}"
 
 GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}" gh pr create \
   --base "${BASE_BRANCH}" \

@@ -31,3 +31,10 @@ export const TELEMETRY_FRESHNESS = {
 
 /** Hard cap on points the trail polyline keeps in memory. */
 export const TRAIL_MAX_POINTS = 600;
+
+/**
+ * Max queued synthetic-latency timers in {@link SimulationEngine}. Beyond this,
+ * delayed publishes are shed (sent immediately) so high tick Hz + jitter cannot
+ * exhaust the JS timer queue.
+ */
+export const SIM_MAX_PENDING_LATENCY_FRAMES = 48;

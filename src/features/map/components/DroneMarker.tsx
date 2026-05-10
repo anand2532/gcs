@@ -14,10 +14,9 @@
  *     re-render every tick — fine for HUD numbers, expensive for a marker
  *     that touches native props.
  *   - Position is held as React state (React must commit to push the new
- *     coordinate to MarkerView). MapLibre's MarkerView interpolates the
- *     position natively when it receives new coords — at 10 Hz the result
- *     looks smooth at 60fps because MapLibre eases between coordinate
- *     updates internally.
+ *     coordinate to MarkerView). Updates are trailing-throttled to
+ *     DRONE_MARKER_POSITION_MAX_HZ so high sim tick rates do not commit every
+ *     frame; MapLibre still interpolates between commits on the native side.
  *   - Heading is animated via Reanimated `withTiming` on a `SharedValue`
  *     so the arrow eases to the new bearing without re-rendering React.
  */
@@ -27,6 +26,7 @@ import {Pressable, StyleSheet, View} from 'react-native';
 
 import {MarkerView} from '@maplibre/maplibre-react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -36,6 +36,9 @@ import Animated, {
 // eslint-disable-next-line import/no-named-as-default
 import Svg, {Circle, Line, Path} from 'react-native-svg';
 
+import {DRONE_MARKER_POSITION_MAX_HZ} from '../../../core/constants/map';
+import {unwrapHeadingRadians} from '../../../core/utils/heading';
+import {trailingThrottle} from '../../../core/utils/throttle';
 import {telemetryBus} from '../../../modules/telemetry';
 import {useTheme} from '../../../ui/theme/ThemeProvider';
 
@@ -49,6 +52,11 @@ const SIZE = 84;
 const RING_INSET = 4;
 const BODY_SIZE = 60;
 
+const MARKER_POSITION_INTERVAL_MS = Math.max(
+  16,
+  Math.ceil(1000 / DRONE_MARKER_POSITION_MAX_HZ),
+);
+
 export function DroneMarker({
   initialCoordinate,
   armed,
@@ -59,8 +67,36 @@ export function DroneMarker({
     initialCoordinate ?? null,
   );
   const headingRad = useSharedValue(0);
-  const lastHeadingDeg = useRef(0);
   const pulse = useSharedValue(0);
+
+  /** One throttle for coords + heading so we never flood Reanimated / MarkerView. */
+  const markerThrottle = useRef(
+    trailingThrottle((lon: number, lat: number, headingDeg: number) => {
+      if (
+        !Number.isFinite(lon) ||
+        !Number.isFinite(lat) ||
+        !Number.isFinite(headingDeg)
+      ) {
+        return;
+      }
+      setCoord(prev => {
+        if (prev && prev[0] === lon && prev[1] === lat) {
+          return prev;
+        }
+        return [lon, lat];
+      });
+      cancelAnimation(headingRad);
+      headingRad.value = withTiming(
+        unwrapHeadingRadians(headingRad.value, headingDeg),
+        {
+          duration: 220,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        },
+      );
+    }, MARKER_POSITION_INTERVAL_MS),
+  ).current;
+
+  useEffect(() => () => markerThrottle.flush(), [markerThrottle]);
 
   useEffect(() => {
     pulse.value = withRepeat(
@@ -72,34 +108,13 @@ export function DroneMarker({
 
   useEffect(() => {
     return telemetryBus.subscribe(frame => {
-      const lon = frame.position.lon;
-      const lat = frame.position.lat;
-      setCoord(prev => {
-        if (prev && prev[0] === lon && prev[1] === lat) {
-          return prev;
-        }
-        return [lon, lat];
-      });
-
-      // Wrap-aware heading animation: pick the shortest path on the unit
-      // circle so 359° -> 1° doesn't spin all the way around.
-      let nextDeg = frame.headingDeg;
-      const prevDeg = lastHeadingDeg.current;
-      let delta = nextDeg - prevDeg;
-      while (delta > 180) {
-        delta -= 360;
-      }
-      while (delta < -180) {
-        delta += 360;
-      }
-      nextDeg = prevDeg + delta;
-      lastHeadingDeg.current = nextDeg;
-      headingRad.value = withTiming((nextDeg * Math.PI) / 180, {
-        duration: 220,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-      });
+      markerThrottle.call(
+        frame.position.lon,
+        frame.position.lat,
+        frame.headingDeg,
+      );
     });
-  }, [headingRad]);
+  }, [markerThrottle]);
 
   const rotateStyle = useAnimatedStyle(() => ({
     transform: [{rotate: `${headingRad.value}rad`}],

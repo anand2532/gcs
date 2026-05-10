@@ -27,6 +27,7 @@ import {
   type SimulationState,
   SimRunState,
 } from './types';
+import {SIM_MAX_PENDING_LATENCY_FRAMES} from '../../core/constants/sim';
 import {log} from '../../core/logger/Logger';
 import {type GeoPosition} from '../../core/types/geo';
 import {type Mission, MissionPhase} from '../../core/types/mission';
@@ -314,7 +315,8 @@ class SimulationEngineImpl implements TelemetrySource {
       return;
     }
     this.updateGpsModel(dt);
-    this.updateBatteryModel(dt, snap.groundSpeed, snap.climbSpeed);
+    const phase = this.runner.progress().phase;
+    this.applyBatteryDrain(dt, snap.groundSpeed, snap.climbSpeed, phase);
     const latencyMs = this.simulatedLatencyMs();
 
     const publishFrame = (): void => {
@@ -353,17 +355,18 @@ class SimulationEngineImpl implements TelemetrySource {
 
     if (latencyMs <= 0) {
       publishFrame();
+    } else if (this.pendingFrameTimers.size >= SIM_MAX_PENDING_LATENCY_FRAMES) {
+      log.sim.warn('latency.queue.shed', {
+        pending: this.pendingFrameTimers.size,
+        cap: SIM_MAX_PENDING_LATENCY_FRAMES,
+      });
+      publishFrame();
     } else {
       const timer = setTimeout(() => {
         this.pendingFrameTimers.delete(timer);
         publishFrame();
       }, latencyMs);
       this.pendingFrameTimers.add(timer);
-    }
-
-    // Synthetic battery drain — load dependent while active.
-    if (this.runner.progress().phase !== MissionPhase.Idle) {
-      this.batterySoc = Math.max(0, this.batterySoc - dt * (0.006 / 60));
     }
 
     if (this.runner.isComplete() && this.state !== SimRunState.Completed) {
@@ -422,9 +425,24 @@ class SimulationEngineImpl implements TelemetrySource {
     }
   }
 
-  private updateBatteryModel(dt: number, groundSpeed: number, climbSpeed: number): void {
-    const flightLoad = 0.002 + groundSpeed * 0.00006 + Math.max(0, climbSpeed) * 0.00015;
-    this.batterySoc = Math.max(0, this.batterySoc - dt * flightLoad);
+  /**
+   * Single battery drain path: propulsion/climb load plus a small mission-clock
+   * overhead whenever the mission FSM is past IDLE (avoids double-counting the
+   * legacy `updateBatteryModel` + post-publish drain).
+   */
+  private applyBatteryDrain(
+    dt: number,
+    groundSpeed: number,
+    climbSpeed: number,
+    missionPhase: MissionPhase,
+  ): void {
+    const flightLoad =
+      0.002 + groundSpeed * 0.00006 + Math.max(0, climbSpeed) * 0.00015;
+    let drainPerSec = flightLoad;
+    if (missionPhase !== MissionPhase.Idle) {
+      drainPerSec += 0.006 / 60;
+    }
+    this.batterySoc = Math.max(0, this.batterySoc - dt * drainPerSec);
   }
 
   private updateLinkModel(dt: number): void {
