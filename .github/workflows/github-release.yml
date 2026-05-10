@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and attach gcs-android-debug.apk (e.g. v0.3.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,9 +17,13 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', github.event.inputs.tag) || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -62,8 +72,8 @@ jobs:
       - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: GCS ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: GCS ${{ env.RELEASE_TAG }}
           files: ${{ steps.apk.outputs.path }}
           fail_on_unmatched_files: true
           body: |
@@ -75,14 +85,14 @@ jobs:
 
             | Asset | Description |
             |-------|-------------|
-            | **[gcs-android-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/gcs-android-debug.apk)** | Android **debug** APK built by CI from this tag (install via `adb install` or sideload). |
+            | **[gcs-android-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/gcs-android-debug.apk)** | Android **debug** APK built by CI from this tag (install via `adb install` or sideload). |
 
             > For a signed **release** / Play-ready build, use your keystore and `./gradlew assembleRelease` locally or extend this workflow with signing secrets.
 
             ### This tag
 
             - **Semantic version** matches `package.json`; Android `versionName` and iOS `MARKETING_VERSION` follow the same string; native build integers are derived from semver (`major×10000 + minor×100 + patch`).
-            - **Docs:** [Setup and build](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/doc/setup-and-build/setup-and-build.md) · [Documentation index](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/doc/README.md) · [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md)
+            - **Docs:** [Setup and build](https://github.com/${{ github.repository }}/blob/${{ env.RELEASE_TAG }}/doc/setup-and-build/setup-and-build.md) · [Documentation index](https://github.com/${{ github.repository }}/blob/${{ env.RELEASE_TAG }}/doc/README.md) · [README](https://github.com/${{ github.repository }}/blob/${{ env.RELEASE_TAG }}/README.md)
 
             ### Commands (quick reference)
 
@@ -95,4 +105,4 @@ jobs:
 
             ---
 
-            _Release published automatically from tag `${{ github.ref_name }}`._
+            _Release published automatically from tag `${{ env.RELEASE_TAG }}`._
