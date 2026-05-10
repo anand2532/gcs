@@ -4,7 +4,7 @@ Local **vector overlays** for restricted / caution airspace are modeled as GeoJS
 
 ## Storage
 
-- **`AirspaceStore`** merges bundled demonstration features with an optional MMKV override (`geospatial.airspace.overlay.v1`).
+- **`AirspaceStore`** merges bundled demonstration features with an optional MMKV override (`geospatial.airspace.overlay.v1`). **Map rendering** uses `getMapOverlayGeoJson()` (override features only) so the bundled demo zone does not paint a red fill on the map; **mission validation** still uses `getActiveGeoJson()` (bundled sample + overrides).
 - **`SAMPLE_RESTRICTED_AIRSPACE_GEOJSON`** ships as illustrative data only — not for operational navigation or regulatory compliance.
 
 ## Restrictive classification

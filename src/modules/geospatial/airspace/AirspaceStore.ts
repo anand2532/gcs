@@ -21,7 +21,10 @@ function parseFc(raw: string): AirspaceFeatureCollection | null {
  * Local airspace vector cache + bundled demo layer merge.
  */
 export const AirspaceStore = {
-  /** Active GeoJSON for MapLibre ShapeSource (restricted demo + overrides). */
+  /**
+   * Full merged GeoJSON for **mission validation** (bundled sample + optional MMKV override).
+   * The bundled sample is illustration data only — it must participate in checks/tests.
+   */
   getActiveGeoJson(): AirspaceFeatureCollection {
     const custom = storage.getRaw(KEY);
     const base =
@@ -37,6 +40,19 @@ export const AirspaceStore = {
       type: 'FeatureCollection',
       features: [...base.features, ...extra.features],
     };
+  },
+
+  /**
+   * GeoJSON for **map overlay only** — optional MMKV override features only.
+   * Bundled demo polygons are intentionally excluded so the demo advisory zone does not paint a large red fill on the map (validation still uses {@link getActiveGeoJson}).
+   */
+  getMapOverlayGeoJson(): AirspaceFeatureCollection {
+    const custom = storage.getRaw(KEY);
+    if (!custom) {
+      return {type: 'FeatureCollection', features: []};
+    }
+    const extra = parseFc(custom);
+    return extra ?? {type: 'FeatureCollection', features: []};
   },
 
   saveOverride(fc: AirspaceFeatureCollection): void {

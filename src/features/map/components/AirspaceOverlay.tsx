@@ -13,7 +13,7 @@ import type {FeatureCollection} from 'geojson';
 export function AirspaceOverlay(): React.JSX.Element | null {
   const theme = useTheme();
 
-  const shape = useMemo(() => AirspaceStore.getActiveGeoJson(), []);
+  const shape = useMemo(() => AirspaceStore.getMapOverlayGeoJson(), []);
 
   useEffect(() => {
     globalOverlayRegistry.scheduleFlush(24);
