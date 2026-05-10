@@ -6,6 +6,7 @@
   "scripts": {
     "android": "react-native run-android",
     "android:phone": "bash scripts/run-android-physical.sh",
+    "android:phone:8082": "bash scripts/run-android-physical-8082.sh",
     "ios": "react-native run-ios",
     "start": "react-native start",
     "start:8082": "fuser -k 8081/tcp || true && fuser -k 8082/tcp || true && react-native start --port 8082 --reset-cache",
