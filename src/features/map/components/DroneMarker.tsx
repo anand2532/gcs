@@ -129,6 +129,9 @@ export function DroneMarker({
   }
 
   const tint = armed ? theme.palette.danger : theme.palette.accentGreen;
+  /** Outer HSI ring / ticks: avoid danger red (reads as a harsh “box” around the icon when armed). */
+  const compassAccent = armed ? theme.palette.accentCyan : theme.palette.accentGreen;
+  const airframeStroke = armed ? 'rgba(220,226,235,0.72)' : tint;
 
   return (
     <MarkerView coordinate={coord} anchor={{x: 0.5, y: 0.5}}>
@@ -145,9 +148,8 @@ export function DroneMarker({
             pulseStyle,
             {
               backgroundColor: armed
-                ? 'rgba(255,71,87,0.16)'
+                ? 'rgba(255,71,87,0.12)'
                 : 'rgba(72,214,124,0.16)',
-              borderColor: tint,
             },
           ]}
         />
@@ -159,10 +161,10 @@ export function DroneMarker({
               cx={SIZE / 2}
               cy={SIZE / 2}
               r={SIZE / 2 - RING_INSET}
-              stroke={tint}
+              stroke={compassAccent}
               strokeOpacity={0.55}
               strokeWidth={1}
-              fill={armed ? 'rgba(255,71,87,0.06)' : 'rgba(72,214,124,0.06)'}
+              fill={armed ? 'rgba(45,55,72,0.22)' : 'rgba(72,214,124,0.06)'}
             />
             {/* N tick (top) — slightly bolder so 'up = north' is unambiguous */}
             <Line
@@ -170,7 +172,7 @@ export function DroneMarker({
               y1={2}
               x2={SIZE / 2}
               y2={11}
-              stroke={tint}
+              stroke={compassAccent}
               strokeWidth={2}
             />
             {/* E / S / W ticks */}
@@ -179,7 +181,7 @@ export function DroneMarker({
               y1={SIZE / 2}
               x2={SIZE - 11}
               y2={SIZE / 2}
-              stroke={tint}
+              stroke={compassAccent}
               strokeWidth={1}
               opacity={0.7}
             />
@@ -188,7 +190,7 @@ export function DroneMarker({
               y1={SIZE - 2}
               x2={SIZE / 2}
               y2={SIZE - 11}
-              stroke={tint}
+              stroke={compassAccent}
               strokeWidth={1}
               opacity={0.7}
             />
@@ -197,7 +199,7 @@ export function DroneMarker({
               y1={SIZE / 2}
               x2={11}
               y2={SIZE / 2}
-              stroke={tint}
+              stroke={compassAccent}
               strokeWidth={1}
               opacity={0.7}
             />
@@ -219,7 +221,7 @@ export function DroneMarker({
             <Path
               d="M22 12 L38 12 L38 22 L48 22 L48 38 L38 38 L38 48 L22 48 L22 38 L12 38 L12 22 L22 22 Z"
               fill="rgba(10,15,22,0.92)"
-              stroke={tint}
+              stroke={airframeStroke}
               strokeWidth={1.6}
               strokeLinejoin="round"
             />
@@ -249,7 +251,6 @@ const styles = StyleSheet.create({
     width: SIZE - 18,
     height: SIZE - 18,
     borderRadius: (SIZE - 18) / 2,
-    borderWidth: 1,
   },
   center: {
     alignItems: 'center',
