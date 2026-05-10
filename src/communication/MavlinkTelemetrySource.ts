@@ -10,6 +10,7 @@ import {UdpTransport} from './transports/UdpTransport';
 import {FcHeartbeatMonitor} from './watchdog/FcHeartbeatMonitor';
 import {log} from '../core/logger/Logger';
 import {
+  ConnectionState,
   type TelemetrySource,
   TelemetrySourceKind,
 } from '../core/types/telemetry';
@@ -201,6 +202,8 @@ export class MavlinkTelemetrySource implements TelemetrySource {
     this.pipeline = null;
     this.running = false;
     this.lastRemote = null;
+    useTelemetryStore.getState().endSession();
+    useTelemetryStore.getState().setConnection(ConnectionState.Idle);
     log.communication.info('mavlink.udp.stopped', {});
   }
 

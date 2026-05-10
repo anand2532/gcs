@@ -34,6 +34,26 @@ describe('simulation engine', () => {
     expect(typeof simulationEngine.isRunning).toBe('function');
   });
 
+  it('drains battery monotonically on published frames (single drain path)', async () => {
+    simulationEngine.setTickHz(15);
+    const soc: number[] = [];
+    const unsub = telemetryBus.subscribe(frame => {
+      soc.push(frame.battery.soc);
+    });
+    simulationEngine.start();
+    await new Promise(resolve => setTimeout(resolve, 450));
+    simulationEngine.stop();
+    unsub();
+
+    expect(soc.length).toBeGreaterThan(3);
+    for (let i = 1; i < soc.length; i++) {
+      expect(soc[i]).toBeLessThanOrEqual(soc[i - 1]! + 1e-12);
+    }
+    const first = soc[0]!;
+    const last = soc[soc.length - 1]!;
+    expect(last).toBeLessThan(first);
+  });
+
   it('publishes frames once started and moves the vehicle', async () => {
     simulationEngine.setTickHz(50);
     const frames: number[] = [];

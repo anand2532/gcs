@@ -84,6 +84,12 @@ export const FOLLOW_CAMERA_MAX_HZ = 12;
 /** Max FlightTrail ShapeSource commits per second (polygon redraw cost). */
 export const FLIGHT_TRAIL_REDRAW_MAX_HZ = 12;
 
+/**
+ * Max DroneMarker coordinate commits per second (MarkerView → native bridge).
+ * Independent of telemetry tick Hz; heading still tracks every frame on UI thread via Reanimated.
+ */
+export const DRONE_MARKER_POSITION_MAX_HZ = 15;
+
 export const SATELLITE_STYLE: MapLibreStyle = {
   version: 8,
   name: 'GCS Satellite',

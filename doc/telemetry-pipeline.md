@@ -31,7 +31,7 @@
 
 ## Map ornaments
 
-- **`DroneMarker`** — subscribes directly to `telemetryBus` (not the store) to avoid React committing every frame through Zustand.
+- **`DroneMarker`** — subscribes directly to `telemetryBus` (not the store) to avoid React committing every frame through Zustand; **coordinate** updates are trailing-throttled to `DRONE_MARKER_POSITION_MAX_HZ` (`src/core/constants/map.ts`).
 - **`FlightTrail`** — bus subscription; ShapeSource updates are **throttled** (`FLIGHT_TRAIL_REDRAW_MAX_HZ` in `src/core/constants/map.ts`).
 - **`useMapCamera`** — follow mode uses bus + **throttled** `setCamera` (`FOLLOW_CAMERA_MAX_HZ`) to limit bridge traffic when sim tick rate is high.
 

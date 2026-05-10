@@ -1,6 +1,10 @@
 /**
  * Chains onto React Native's JS global handler so ExceptionsManager / redbox
  * still runs after we record structured logs for fatal and non-fatal errors.
+ *
+ * Unhandled promise rejections are already routed through RN's promise
+ * rejection tracking (`promiseRejectionTrackingOptions`) to LogBox in dev;
+ * we do not duplicate that path here.
  */
 
 import {log} from '../../core/logger/Logger';
