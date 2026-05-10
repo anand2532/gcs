@@ -15,15 +15,69 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create GitHub Release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: >-
+            tools
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+            ndk;27.1.12297006
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Locate and stage APK for release
+        id: apk
+        run: |
+          set -euxo pipefail
+          APK="$(find android/app/build/outputs/apk -name '*.apk' -type f | head -n 1)"
+          if [[ -z "${APK}" || ! -f "${APK}" ]]; then
+            echo "::error::No APK found under android/app/build/outputs/apk — assembleDebug may have failed silently."
+            find android/app/build/outputs -type f -name '*.apk' 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p release
+          # Simple filename avoids glob edge cases in action-gh-release `files` matching.
+          OUT="release/gcs-android-debug.apk"
+          cp -v "${APK}" "${OUT}"
+          ls -la "${OUT}"
+          echo "path=${OUT}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: GCS ${{ github.ref_name }}
+          files: ${{ steps.apk.outputs.path }}
+          fail_on_unmatched_files: true
           body: |
             ## GCS — UAV Ground Control (mobile)
 
             Production-grade, mobile-first **ground control** for UAV operations. Phase 1 ships a dark tactical map home screen, a **simulation engine** on the same telemetry pipeline used for live links, **MapLibre** mapping, a **Command Center** hub, a **Telemetry Terminal** (logs, filters, export, inspectors), and a **MAVLink** communication layer (UDP/TCP and Android USB-focused workflows).
+
+            ### Download
+
+            | Asset | Description |
+            |-------|-------------|
+            | **[gcs-android-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/gcs-android-debug.apk)** | Android **debug** APK built by CI from this tag (install via `adb install` or sideload). |
+
+            > For a signed **release** / Play-ready build, use your keystore and `./gradlew assembleRelease` locally or extend this workflow with signing secrets.
 
             ### This tag
 
