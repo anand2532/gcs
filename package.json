@@ -12,6 +12,7 @@
     "android:8082": "adb reverse --remove-all && adb reverse tcp:8082 tcp:8082 && react-native run-android --port 8082",
     "device:prep": "bash scripts/device-prep-usb-8081.sh",
     "device:prep:8082": "adb reverse --remove-all && adb reverse tcp:8081 tcp:8082 && adb reverse tcp:8082 tcp:8082",
+    "android:devloop": "bash scripts/android-devloop.sh",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "typecheck": "tsc --noEmit",
@@ -27,7 +28,7 @@
     "release:major": "npm version major --no-git-tag-version && npm run version:sync",
     "pr:create": "bash scripts/create-pr.sh",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky install || true"
+    "prepare": "husky"
   },
   "dependencies": {
     "@maplibre/maplibre-react-native": "^10.0.0-alpha.27",

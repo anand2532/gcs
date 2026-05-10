@@ -1,0 +1,13 @@
+---
+description: Run validation gates before concluding RN/Android or CI-related work
+alwaysApply: true
+---
+
+# Verification before closing out work
+
+When finishing changes under `src/`, `android/`, `ios/`, `.github/workflows/`, `scripts/`, or anything that affects builds or telemetry/simulation:
+
+1. Run **`npm run validate:all`** (lint, tests, typecheck, native version check, `assembleDebug`).
+2. If the task involves **on-device USB verification** and `adb devices` shows a non-`emulator-*` device in state `device`, also run **`npm run android:devloop`** — Metro must be on **port 8081** (or run `npm run device:prep` after `npm run start`).
+
+Do not report the task complete while validation fails; fix or narrow scope first.
